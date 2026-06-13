@@ -1,0 +1,205 @@
+{
+  "A-1042": {
+    "alertId": "A-1042",
+    "title": "Encoded PowerShell on HR-DC01",
+    "severity": "high",
+    "evidence": [
+      { "type": "process", "detail": "powershell.exe -nop -w hidden -enc SQBFAFgAIAAo..." },
+      { "type": "network", "detail": "Outbound beacon to 185.220.101.47:443 (Tor exit range)" },
+      { "type": "parent", "detail": "Spawned by winword.exe (macro-enabled doc)" }
+    ],
+    "tribunal": {
+      "prosecutor": [
+        { "point": "Base64-encoded command + hidden window", "weight": 0.85 },
+        { "point": "Outbound beacon to known malicious range", "weight": 0.8 },
+        { "point": "Office parent process indicates phishing macro", "weight": 0.7 }
+      ],
+      "defender": [
+        { "point": "User is a local admin and runs automation tooling", "weight": 0.25 },
+        { "point": "No file was dropped to disk", "weight": 0.2 }
+      ],
+      "verdict": "TRUE_POSITIVE",
+      "confidence": 0.92
+    },
+    "recommendation": {
+      "severity": "high",
+      "actionItems": ["Isolate HR-DC01", "Reset affected credentials", "Hunt for lateral movement", "Submit macro doc to sandbox"],
+      "playbook": "PB-Malicious-PowerShell"
+    }
+  },
+  "A-1088": {
+    "alertId": "A-1088",
+    "title": "Suspicious OAuth grant to unknown app",
+    "severity": "medium",
+    "evidence": [
+      { "type": "identity", "detail": "User granted offline_access + Mail.ReadWrite to 'QuickInvoice'" },
+      { "type": "app", "detail": "App registered 2h ago, no verified publisher" }
+    ],
+    "tribunal": {
+      "prosecutor": [
+        { "point": "Newly registered app requesting mailbox scopes", "weight": 0.78 },
+        { "point": "Consent occurred outside business hours", "weight": 0.55 }
+      ],
+      "defender": [
+        { "point": "User has approved third-party invoicing tools before", "weight": 0.3 }
+      ],
+      "verdict": "TRUE_POSITIVE",
+      "confidence": 0.81
+    },
+    "recommendation": {
+      "severity": "medium",
+      "actionItems": ["Revoke the OAuth grant", "Review mailbox rules for exfil forwarding", "Notify the user"],
+      "playbook": "PB-OAuth-Consent-Abuse"
+    }
+  },
+  "A-1190": {
+    "alertId": "A-1190",
+    "title": "LSASS memory access by non-standard process",
+    "severity": "critical",
+    "evidence": [
+      { "type": "process", "detail": "rundll32.exe opened handle to lsass.exe with PROCESS_VM_READ" },
+      { "type": "module", "detail": "comsvcs.dll MiniDump called" }
+    ],
+    "tribunal": {
+      "prosecutor": [
+        { "point": "Classic comsvcs.dll credential dump technique (T1003.001)", "weight": 0.95 },
+        { "point": "No legitimate admin task scheduled", "weight": 0.7 }
+      ],
+      "defender": [
+        { "point": "EDR vendor agent occasionally reads lsass", "weight": 0.15 }
+      ],
+      "verdict": "TRUE_POSITIVE",
+      "confidence": 0.97
+    },
+    "recommendation": {
+      "severity": "critical",
+      "actionItems": ["Isolate the host immediately", "Capture memory for triage", "Rotate all credentials used on host", "Hunt for Tier-0 access"],
+      "playbook": "PB-Credential-Dumping"
+    }
+  },
+  "A-1205": {
+    "alertId": "A-1205",
+    "title": "Impossible travel for finance admin",
+    "severity": "high",
+    "evidence": [
+      { "type": "identity", "detail": "Login from Berlin then Singapore within 38 minutes" },
+      { "type": "network", "detail": "Second login via residential proxy ASN" }
+    ],
+    "tribunal": {
+      "prosecutor": [
+        { "point": "Geographic velocity is physically impossible", "weight": 0.85 },
+        { "point": "Proxy ASN frequently abused", "weight": 0.6 }
+      ],
+      "defender": [
+        { "point": "User sometimes uses corporate VPN egress", "weight": 0.35 }
+      ],
+      "verdict": "TRUE_POSITIVE",
+      "confidence": 0.88
+    },
+    "recommendation": {
+      "severity": "high",
+      "actionItems": ["Force re-authentication", "Revoke active sessions", "Enable step-up MFA", "Review finance approvals from window"],
+      "playbook": "PB-Account-Takeover"
+    }
+  },
+  "A-1233": {
+    "alertId": "A-1233",
+    "title": "Scheduled task persistence on WKS-204",
+    "severity": "medium",
+    "evidence": [
+      { "type": "persistence", "detail": "schtasks created 'UpdaterSvc' running from %TEMP%" },
+      { "type": "process", "detail": "Task action: wscript.exe a.js" }
+    ],
+    "tribunal": {
+      "prosecutor": [
+        { "point": "Task points to a script in TEMP", "weight": 0.72 },
+        { "point": "Name mimics a legitimate service", "weight": 0.5 }
+      ],
+      "defender": [
+        { "point": "Some installers create temp tasks", "weight": 0.3 }
+      ],
+      "verdict": "TRUE_POSITIVE",
+      "confidence": 0.79
+    },
+    "recommendation": {
+      "severity": "medium",
+      "actionItems": ["Remove the scheduled task", "Quarantine the TEMP script", "Hunt for the same task across fleet"],
+      "playbook": "PB-Scheduled-Task-Persistence"
+    }
+  },
+  "A-1310": {
+    "alertId": "A-1310",
+    "title": "Mass file rename consistent with ransomware",
+    "severity": "critical",
+    "evidence": [
+      { "type": "filesystem", "detail": "4,210 files renamed to *.lockd in 90s on FS-03" },
+      { "type": "note", "detail": "README_RECOVER.txt written to each directory" }
+    ],
+    "tribunal": {
+      "prosecutor": [
+        { "point": "High-velocity rename + ransom note", "weight": 0.96 },
+        { "point": "Process deleted shadow copies (vssadmin)", "weight": 0.85 }
+      ],
+      "defender": [
+        { "point": "Backup software performs bulk operations", "weight": 0.1 }
+      ],
+      "verdict": "TRUE_POSITIVE",
+      "confidence": 0.95
+    },
+    "recommendation": {
+      "severity": "critical",
+      "actionItems": ["Isolate the affected segment", "Trigger ransomware IR playbook", "Identify patient zero", "Validate offline backups"],
+      "playbook": "PB-Ransomware-Containment"
+    }
+  },
+  "A-1377": {
+    "alertId": "A-1377",
+    "title": "Outbound beacon to known C2 range",
+    "severity": "high",
+    "evidence": [
+      { "type": "network", "detail": "Periodic 60s beacon to 91.219.236.0/24 with jitter" },
+      { "type": "process", "detail": "svchost.exe (suspicious, non-standard parent)" }
+    ],
+    "tribunal": {
+      "prosecutor": [
+        { "point": "Regular beaconing interval with jitter", "weight": 0.84 },
+        { "point": "Destination on threat-intel C2 list", "weight": 0.8 }
+      ],
+      "defender": [
+        { "point": "Could be misconfigured telemetry agent", "weight": 0.22 }
+      ],
+      "verdict": "TRUE_POSITIVE",
+      "confidence": 0.9
+    },
+    "recommendation": {
+      "severity": "high",
+      "actionItems": ["Block egress to C2 range", "Isolate the host", "Extract and analyze the implant"],
+      "playbook": "PB-C2-Beacon"
+    }
+  },
+  "A-1402": {
+    "alertId": "A-1402",
+    "title": "Kerberoasting-style ticket requests",
+    "severity": "medium",
+    "evidence": [
+      { "type": "identity", "detail": "27 TGS requests for SPNs with RC4 encryption from one host" },
+      { "type": "context", "detail": "Requesting account is a standard user" }
+    ],
+    "tribunal": {
+      "prosecutor": [
+        { "point": "Bulk RC4 SPN ticket requests", "weight": 0.7 },
+        { "point": "Standard user enumerating service accounts", "weight": 0.6 }
+      ],
+      "defender": [
+        { "point": "Legacy app may request multiple SPNs", "weight": 0.4 }
+      ],
+      "verdict": "TRUE_POSITIVE",
+      "confidence": 0.76
+    },
+    "recommendation": {
+      "severity": "medium",
+      "actionItems": ["Rotate affected service account passwords", "Enable AES-only where possible", "Monitor for offline cracking indicators"],
+      "playbook": "PB-Kerberoasting"
+    }
+  }
+}
