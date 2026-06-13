@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./backend
+    container_name: sentrix-backend
+    environment:
+      - APP_NAME=SENTRIX
+      - DATA_SOURCE=mock
+      - JWT_SECRET=change-me-in-production-super-secret-key
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE: http://localhost:8000
+    container_name: sentrix-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
