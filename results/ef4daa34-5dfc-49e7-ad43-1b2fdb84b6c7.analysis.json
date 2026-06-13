@@ -1,0 +1,28 @@
+{
+  "executive_summary": "The AS-REP roasting attack using Rubeus was successful on the target, allowing the attacker to harvest credentials. This compromises the security of the domain-joined Windows system.",
+  "risk_level": "critical",
+  "findings": [
+    {
+      "severity": "critical",
+      "technique_id": "T1558.004",
+      "tactic": "credential-access",
+      "target_id": "tgt-1",
+      "title": "AS-REP Roasting Attack Succeeded — Credential Harvest Possible",
+      "detail": "The Rubeus tool was used to perform an AS-REP roasting attack, which successfully harvested credentials from the domain-joined Windows system. This allows the attacker to potentially obtain plaintext passwords or NTLM hashes.",
+      "evidence": "cmd.exe /c \"PathToAtomicsFolder\\..\\ExternalPayloads\\rubeus.exe\" asreproast /outfile:\"PathToAtomicsFolder\\..\\ExternalPayloads\\rubeus_output.txt\"",
+      "recommendation": "Configure Kerberos pre-authentication to be required for all user accounts. Enable and enforce strong password policies and consider implementing multi-factor authentication (MFA) for critical accounts."
+    }
+  ],
+  "succeeded_techniques": [
+    "T1558.004"
+  ],
+  "failed_techniques": [
+    "T1558.004"
+  ],
+  "key_observations": [
+    "The Rubeus tool successfully performed an AS-REP roasting attack, indicating that some user accounts are vulnerable to this attack."
+  ],
+  "attack_path": "Attacker ran Rubeus asreproast on tgt-1 (exit 0) → output showed successful credential harvesting → can now pivot to cracking the harvested hashes or using them for further attacks.",
+  "timestamp": "2026-06-13T07:25:34.988285",
+  "error": null
+}

@@ -1,0 +1,61 @@
+{
+  "job_id": "9e8b82b5-62e4-4898-a94b-632409d85863",
+  "targets": [
+    {
+      "target_id": "tgt-1",
+      "name": "localhost",
+      "os_platform": "windows",
+      "privilege": "admin",
+      "connection": "remote",
+      "domain_joined": true,
+      "host": "192.168.50.162",
+      "notes": ""
+    }
+  ],
+  "summary": {
+    "target_count": 1,
+    "total_tests": 1,
+    "succeeded": 0,
+    "failed": 1,
+    "skipped": 0
+  },
+  "by_target": [
+    {
+      "target": {
+        "target_id": "tgt-1",
+        "name": "localhost",
+        "os_platform": "windows",
+        "privilege": "admin",
+        "connection": "remote",
+        "domain_joined": true,
+        "host": "192.168.50.162",
+        "notes": ""
+      },
+      "summary": {
+        "total_tests": 1,
+        "succeeded": 0,
+        "failed": 1,
+        "skipped": 0,
+        "tactics_tested": [
+          "discovery"
+        ]
+      },
+      "results": [
+        {
+          "technique_id": "T1069.002",
+          "test_name": "Get-ADUser Enumeration using UserAccountControl flags (AS-REP Roasting)",
+          "tactic": "discovery",
+          "success": false,
+          "exit_code": -1,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "",
+          "stderr": "WinRM execution error: Failed to authenticate the user Administrator@local.xorp with ntlm",
+          "command_executed": "Get-ADUser -Filter 'useraccountcontrol -band 4194304' -Properties useraccountcontrol | Format-Table name\n",
+          "duration_ms": 47,
+          "timestamp": "2026-06-13T05:40:26.000327"
+        }
+      ]
+    }
+  ]
+}

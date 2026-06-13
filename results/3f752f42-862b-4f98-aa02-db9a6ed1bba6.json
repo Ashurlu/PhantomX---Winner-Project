@@ -1,0 +1,75 @@
+{
+  "job_id": "3f752f42-862b-4f98-aa02-db9a6ed1bba6",
+  "targets": [
+    {
+      "target_id": "tgt-1",
+      "name": "localhost",
+      "os_platform": "windows",
+      "privilege": "admin",
+      "connection": "local",
+      "domain_joined": false,
+      "host": "local",
+      "notes": ""
+    }
+  ],
+  "summary": {
+    "target_count": 1,
+    "total_tests": 2,
+    "succeeded": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "by_target": [
+    {
+      "target": {
+        "target_id": "tgt-1",
+        "name": "localhost",
+        "os_platform": "windows",
+        "privilege": "admin",
+        "connection": "local",
+        "domain_joined": false,
+        "host": "local",
+        "notes": ""
+      },
+      "summary": {
+        "total_tests": 2,
+        "succeeded": 2,
+        "failed": 0,
+        "skipped": 0,
+        "tactics_tested": [
+          "discovery"
+        ]
+      },
+      "results": [
+        {
+          "technique_id": "T1082",
+          "test_name": "System Information Discovery",
+          "tactic": "discovery",
+          "success": true,
+          "exit_code": 0,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "\r\nHost Name:                     PC-DBY52V3\r\nOS Name:                       Microsoft Windows 11 Pro\r\nOS Version:                    10.0.26200 N/A Build 26200\r\nOS Manufacturer:               Microsoft Corporation\r\nOS Configuration:              Standalone Workstation\r\nOS Build Type:                 Multiprocessor Free\r\nRegistered Owner:              Windows User\r\nRegistered Organization:       idda\r\nProduct ID:                    00330-80000-00000-AA488\r\nOriginal Install Date:         1/8/2026, 3:58:25 PM\r\nSystem Boot Time:              6/12/2026, 1:48:38 PM\r\nSystem Manufacturer:           Dell Inc.\r\nSystem Model:                  OptiPlex 3000\r\nSystem Type:                   x64-based PC\r\nProcessor(s):                  1 Processor(s) Installed.\r\n                               [01]: Intel64 Family 6 Model 151 Stepping 2 GenuineIntel ~1400 Mhz\r\nBIOS Version:                  Dell Inc. 1.39.1, 3/31/2026\r\nWindows Directory:             C:\\windows\r\nSystem Directory:              C:\\windows\\system32\r\nBoot Device:                   \\Device\\HarddiskVolume1\r\nSystem Locale:                 en-us;English (United States)\r\nInput Locale:                  en-us;English (United States)\r\nTime Zone:                     (UTC+04:00) Baku\r\nTotal Physical Memory:         32,457 MB\r\nAvailable Physical Memory:     7,003 MB\r\nVirtual Memory: Max Size:      34,505 MB\r\nVirtual Memory: Available:     1,873 MB\r\nVirtual Memory: In Use:        32,632 MB\r\nPage File Location(s):         C:\\pagefile.sys\r\nDomain:                        WORKGROUP\r\nLogon Server:                  \\\\PC-DBY52V3\r\nHotfix(s):                     6 Hotfix(s) Installed.\r\n                               [01]: KB5092427\r\n                               [02]: KB5054156\r\n                               [03]: KB5071430\r\n                               [04]: KB5094126\r\n                               [05]: KB5092734\r\n                               [06]: KB5094135\r\nNetwork Card(s):               7 NIC(s) Installed.\r\n                               [01]: Realtek PCIe GbE Family Controller\r\n                                     Connection Name: Ethernet\r\n                                     DHCP Enabled:    Yes\r\n                                     DHCP Server:     192.168.51.254\r\n                                     IP address(es)\r\n                                     [01]: 192.168.50.38\r\n                               [02]: VirtualBox Host-Only Ethernet Adapter\r\n                                     Connection Name: Ethernet 2\r\n                                     DHCP Enabled:    Yes\r\n                                     DHCP Server:     255.255.255.255\r\n                                     IP address(es)\r\n                                     [01]: 169.254.112.98\r\n                                     [02]: fe80::1f4:1862:ba92:b3bc\r\n                               [03]: VMware Virtual Ethernet Adapter for VMnet1\r\n                                     Connection Name: Ethernet 3\r\n                                     DHCP En",
+          "stderr": "",
+          "command_executed": "systeminfo\nreg query HKLM\\SYSTEM\\CurrentControlSet\\Services\\Disk\\Enum\n",
+          "duration_ms": 4796,
+          "timestamp": "2026-06-13T07:05:03.958975"
+        },
+        {
+          "technique_id": "T1016",
+          "test_name": "System Network Configuration Discovery on Windows",
+          "tactic": "discovery",
+          "success": true,
+          "exit_code": 0,
+          "skipped": false,
+          "skip_reason": "",
+          "stdout": "\r\nWindows IP Configuration\r\n\r\n   Host Name . . . . . . . . . . . . : PC-DBY52V3\r\n   Primary Dns Suffix  . . . . . . . : \r\n   Node Type . . . . . . . . . . . . : Hybrid\r\n   IP Routing Enabled. . . . . . . . : No\r\n   WINS Proxy Enabled. . . . . . . . : No\r\n\r\nEthernet adapter vEthernet (Default Switch):\r\n\r\n   Connection-specific DNS Suffix  . : \r\n   Description . . . . . . . . . . . : Hyper-V Virtual Ethernet Adapter\r\n   Physical Address. . . . . . . . . : 00-15-5D-D3-73-D2\r\n   DHCP Enabled. . . . . . . . . . . : No\r\n   Autoconfiguration Enabled . . . . : Yes\r\n   Link-local IPv6 Address . . . . . : fe80::6208:a637:bd65:aa56%22(Preferred) \r\n   IPv4 Address. . . . . . . . . . . : 172.26.240.1(Preferred) \r\n   Subnet Mask . . . . . . . . . . . : 255.255.240.0\r\n   Default Gateway . . . . . . . . . : \r\n   DHCPv6 IAID . . . . . . . . . . . : 369104221\r\n   DHCPv6 Client DUID. . . . . . . . : 00-01-01-00-30-F1-53-D2-6C-3C-8C-0A-A1-F7\r\n   NetBIOS over Tcpip. . . . . . . . : Enabled\r\n\r\nEthernet adapter Ethernet:\r\n\r\n   Connection-specific DNS Suffix  . : \r\n   Description . . . . . . . . . . . : Realtek PCIe GbE Family Controller\r\n   Physical Address. . . . . . . . . : 6C-3C-8C-0A-A1-F7\r\n   DHCP Enabled. . . . . . . . . . . : Yes\r\n   Autoconfiguration Enabled . . . . : Yes\r\n   IPv4 Address. . . . . . . . . . . : 192.168.50.38(Preferred) \r\n   Subnet Mask . . . . . . . . . . . : 255.255.254.0\r\n   Lease Obtained. . . . . . . . . . : Friday, June 12, 2026 2:11:32 PM\r\n   Lease Expires . . . . . . . . . . : Friday, June 19, 2026 2:11:33 PM\r\n   Default Gateway . . . . . . . . . : 192.168.51.254\r\n   DHCP Server . . . . . . . . . . . : 192.168.51.254\r\n   DNS Servers . . . . . . . . . . . : 8.8.8.8\r\n                                       8.8.4.4\r\n   NetBIOS over Tcpip. . . . . . . . : Enabled\r\n\r\nEthernet adapter Ethernet 2:\r\n\r\n   Connection-specific DNS Suffix  . : \r\n   Description . . . . . . . . . . . : VirtualBox Host-Only Ethernet Adapter\r\n   Physical Address. . . . . . . . . : 0A-00-27-00-00-05\r\n   DHCP Enabled. . . . . . . . . . . : Yes\r\n   Autoconfiguration Enabled . . . . : Yes\r\n   Link-local IPv6 Address . . . . . : fe80::1f4:1862:ba92:b3bc%5(Preferred) \r\n   Autoconfiguration IPv4 Address. . : 169.254.112.98(Preferred) \r\n   Subnet Mask . . . . . . . . . . . : 255.255.0.0\r\n   Default Gateway . . . . . . . . . : \r\n   DHCPv6 IAID . . . . . . . . . . . : 101318695\r\n   DHCPv6 Client DUID. . . . . . . . : 00-01-01-00-30-F1-53-D2-6C-3C-8C-0A-A1-F7\r\n   NetBIOS over Tcpip. . . . . . . . : Enabled\r\n\r\nUnknown adapter OpenVPN TAP-Windows6:\r\n\r\n   Media State . . . . . . . . . . . : Media disconnected\r\n   Connection-specific DNS Suffix  . : \r\n   Description . . . . . . . . . . . : TAP-Windows Adapter V9\r\n   Physical Address. . . . . . . . . : 00-FF-E6-5B-BC-91\r\n   DHCP Enabled. . . . . . . . . . . : Yes\r\n   Autoconfiguration Enabled . . . . : Yes\r\n\r\nUnknown adapter OpenVPN Data Channel Offload:\r\n\r\n   Media State . . . . . . . . . . . : Media disconnected\r\n   Connection-specifi",
+          "stderr": "",
+          "command_executed": "ipconfig /all\nnetsh interface show interface\narp -a\nnbtstat -n\nnet config\n",
+          "duration_ms": 297,
+          "timestamp": "2026-06-13T07:05:04.258156"
+        }
+      ]
+    }
+  ]
+}
