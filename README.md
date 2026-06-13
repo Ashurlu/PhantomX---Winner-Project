@@ -1,141 +1,352 @@
-# PhantomX — `SENTRIX`
+# Adversary Emulation & Automated Detection Engineering (AEADE)
 
-Next-gen **XDR / SOC command platform**. React + shadcn/ui SPA over a FastAPI
-**Backend-For-Frontend (BFF)**. Mock data today, real upstreams (n8n / pentest
-tool) tomorrow — same REST contract, zero frontend change.
+### Powered by PhantomX
 
-> Working product name is `SENTRIX` (single constant `APP_NAME`, easy to rename).
+> AI-Powered Detection Validation, Adversary Emulation, and Automated Security Assessment
 
-## Modules
+---
 
-1. **Overview** — telemetry dashboard with a 3D telemetry core, KPIs, data
-   sources, and a prominent *"False Positives Auto-Closed by n8n"* counter.
-2. **AI Court** — displays n8n's verdicts for **true positives only**, with a
-   3D tribunal (Prosecutor / Defender / Judge), a case feed, and structured
-   remediation recommendations. False positives are counted, never listed.
-3. **Recommended Rules** — KQL detection rules proposed by n8n; **approve / edit
-   / reject-with-reason** by hand (admin only). Approved rules are stored only.
-4. **AGI Pentest** — control panel for the external Atomic Red Team tool: MITRE
-   ATT&CK tactics sidebar → techniques (TTPs) with test/blocked/AD badges →
-   scope (with **Run as** Administrator/Domain User) → execute → AI analysis.
+## Overview
 
-## Hackathon requirement coverage
+**PhantomX** is an AI-driven cybersecurity platform developed as part of the **Adversary Emulation & Automated Detection Engineering (AEADE)** project.
 
-The minimal pipeline — **Atomic Red Team → Wazuh/SIEM → Sigma → ATT&CK Navigator** —
-is wired end to end across the app:
+The platform combines multi-agent AI reasoning with automated adversary emulation to help organizations validate detections, reduce false positives, assess defensive capabilities, and generate actionable security reports.
 
-| Requirement | Where in the app | Endpoint |
-|---|---|---|
-| **1. Execute 2–3 TTPs (Atomic Red Team)** | AGI Pentest → TTP Selection → **Execute** (select TTPs, run, step timeline) | `POST /pentest/runs`, `GET /pentest/runs/{id}` |
-| **2. Ingest telemetry → Wazuh/SIEM** | AGI Pentest → AI Analysis → **SIEM Ingestion — Wazuh** (events, Wazuh rule id, alert level, detected/gap per technique); Wazuh + Sysmon in Overview sources | `GET /pentest/runs/{id}` (`siemIngestion[]`) |
-| **3. Manually write Sigma rules** | Recommended Rules → **Sigma (YAML)** view + edit, and **New Sigma Rule** authoring dialog (admin) | `POST /rules`, `GET/PUT /rules/{id}` (`sigma`) |
-| **4. Single ATT&CK Navigator layer** | AGI Pentest → **ATT&CK Navigator** tab: coverage matrix + **Export Navigator Layer** (official `layer.json`) | `GET /attack/coverage`, `GET /attack/navigator-layer` |
+By leveraging multiple specialized AI agents and real-world attack simulations, PhantomX provides security teams with a transparent and explainable approach to threat detection and security validation.
 
-The exported layer is a valid MITRE ATT&CK Navigator v4.5 layer (`enterprise-attack`,
-scored techniques with `tested`/`detected`/`sigmaRule` metadata, gradient + legend) —
-import it directly into [ATT&CK Navigator](https://mitre-attack.github.io/attack-navigator/).
+---
 
-## Auth & Roles
+## Problem Statement
 
-| User | Password | Role | Capabilities |
-|------|----------|------|--------------|
-| `admin` | `admin123` | admin | Full access — approve/reject/edit rules, launch pentest runs |
-| `analyst` | `analyst123` | analyst | View-only dashboards, AI Court, rules; cannot mutate or launch |
+Modern security teams face several challenges:
 
-RBAC is enforced both in the UI (hidden/disabled actions) and on the backend
-(`require_role("admin")` → 403 on mutating endpoints).
+* Large volumes of security alerts
+* High false-positive rates
+* Alert fatigue among analysts
+* Limited visibility into detection effectiveness
+* Time-consuming penetration testing and validation processes
 
-## Architecture
+PhantomX addresses these challenges through automated analysis, adversarial AI reasoning, and continuous security validation.
 
+---
+
+# Core Features
+
+## 🧠 Multi-Agent Detection Validation Engine
+
+PhantomX introduces a courtroom-inspired AI architecture that evaluates security alerts using multiple independent agents.
+
+### True Positive Agent
+
+This agent analyzes incoming events and argues why the alert represents a genuine threat.
+
+Responsibilities:
+
+* Threat analysis
+* IOC correlation
+* MITRE ATT&CK mapping
+* Risk assessment
+* Supporting evidence collection
+
+---
+
+### False Positive Agent
+
+This agent analyzes the same event and argues why the alert may not represent malicious activity.
+
+Responsibilities:
+
+* Environmental context analysis
+* Baseline behavior comparison
+* Exception identification
+* False positive detection
+
+---
+
+### Judge Agent
+
+The Judge Agent evaluates both perspectives and delivers a final verdict.
+
+Possible outcomes:
+
+* True Positive
+* False Positive
+* Requires Further Investigation
+
+The judge also generates:
+
+* Confidence score
+* Supporting rationale
+* Investigation recommendations
+
+---
+
+## ⚔️ AGI Adversary Emulation Engine
+
+The second major component of PhantomX is its autonomous security validation framework.
+
+Users can select testing scopes such as:
+
+* Standard User
+* Administrator
+* Domain User
+* Domain Administrator
+* Custom Assessment Profiles
+
+The platform then:
+
+1. Selects appropriate attack techniques.
+2. Executes Atomic Red Team tests.
+3. Collects execution results.
+4. Converts outputs into structured JSON.
+5. Analyzes findings using AI.
+6. Generates professional reports.
+
+---
+
+## 🔥 Atomic Red Team Integration
+
+PhantomX leverages Atomic Red Team techniques to emulate real-world adversary behavior.
+
+Examples include:
+
+* Credential Access
+* Discovery
+* Privilege Escalation
+* Persistence
+* Lateral Movement
+* Defense Evasion
+* Collection
+* Exfiltration
+
+This enables organizations to continuously validate security controls against known attack patterns.
+
+---
+
+## 📊 AI-Powered Report Generation
+
+After execution, PhantomX automatically generates professional HTML reports.
+
+Generated content includes:
+
+### Executive Summary
+
+* Overall security posture
+* High-level findings
+* Risk overview
+
+### Technical Findings
+
+* Executed TTPs
+* Detection results
+* Security gaps
+
+### Detection Analysis
+
+* Successful detections
+* Missed detections
+* Detection coverage assessment
+
+### Recommendations
+
+* Remediation guidance
+* Detection engineering improvements
+* Security hardening recommendations
+
+---
+
+## 🔌 Configurable AI Providers
+
+PhantomX is designed to be AI-provider agnostic.
+
+Supported deployments include:
+
+### Cloud Models
+
+* OpenAI
+* Anthropic Claude
+* Google Gemini
+* Azure OpenAI
+
+### Local Models
+
+* Ollama
+* Llama
+* Mistral
+* Qwen
+* Custom self-hosted models
+
+Organizations can fully operate PhantomX in air-gapped environments using local LLMs.
+
+---
+
+# System Architecture
+
+```text
+                    ┌────────────────────┐
+                    │ Incoming Security  │
+                    │       Events       │
+                    └──────────┬─────────┘
+                               │
+                               ▼
+
+                ┌───────────────────────────┐
+                │ Multi-Agent Analysis Layer│
+                └───────────────────────────┘
+                     │                │
+                     ▼                ▼
+
+        ┌─────────────────┐  ┌─────────────────┐
+        │ True Positive   │  │ False Positive  │
+        │     Agent       │  │      Agent      │
+        └────────┬────────┘  └────────┬────────┘
+                 │                    │
+                 └────────┬───────────┘
+                          ▼
+
+                ┌───────────────────┐
+                │    Judge Agent    │
+                └─────────┬─────────┘
+                          ▼
+
+                ┌───────────────────┐
+                │ Final Verdict &   │
+                │ Confidence Score  │
+                └───────────────────┘
 ```
-[ React + shadcn UI ] --HTTP--> [ FastAPI BFF ] --> [ Mock JSON ]        (TODAY)
-                                              \--> [ n8n / Pentest REST ] (LATER, same endpoints)
+
+---
+
+## Adversary Emulation Workflow
+
+```text
+Selected Scope
+      │
+      ▼
+
+Atomic Red Team Execution
+      │
+      ▼
+
+Result Collection
+      │
+      ▼
+
+JSON Conversion
+      │
+      ▼
+
+AI Analysis
+      │
+      ▼
+
+HTML Report Generation
 ```
 
-- Frontend talks **only** to `http://localhost:8000/api/v1/...`. No secrets in
-  the frontend bundle.
-- Backend flag `DATA_SOURCE=mock|live` selects mock JSON vs real upstream.
-  Switching to real data = implement `app/services/live_provider.py` and set
-  `DATA_SOURCE=live`. No frontend change required.
+---
 
-## Tech stack
+# Use Cases
 
-- **Frontend:** Vite + React 18 + TypeScript, Tailwind + shadcn/ui,
-  framer-motion, lucide-react, React Three Fiber (+ drei + postprocessing),
-  recharts, zustand, @tanstack/react-query, react-router-dom.
-- **Backend:** FastAPI + Uvicorn, Pydantic models (the data contract), JWT auth,
-  mock data in `backend/app/mock/*.json`.
+## Security Operations Centers (SOC)
 
-## Run with Docker (recommended)
+* Alert validation
+* Threat triage
+* Investigation assistance
 
-```bash
-docker compose up --build
-```
+## Detection Engineering
 
-- Frontend → http://localhost:3000
-- Backend  → http://localhost:8000 (docs at `/docs`)
+* Detection validation
+* Coverage assessment
+* Rule tuning
 
-## Run locally (dev)
+## Red Teams
 
-### Backend
+* Adversary emulation
+* Security control testing
 
-```bash
-cd backend
-python -m venv .venv
-# Windows: .venv\Scripts\activate   |   *nix: source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-uvicorn app.main:app --reload --port 8000
-```
+## Blue Teams
 
-Health check: `GET http://localhost:8000/api/v1/health` → `{"status":"ok"}`.
+* Defensive readiness validation
+* Incident response preparation
 
-### Frontend
+## Security Consultants
 
-```bash
-cd frontend
-npm install      # (pnpm also works if available)
-npm run dev      # http://localhost:5173
-```
+* Automated assessment support
+* Report generation
 
-The dev frontend expects the backend at `http://localhost:8000`
-(`frontend/.env` → `VITE_API_BASE`).
+---
 
-## Data contract
+# Key Benefits
 
-All endpoints live under `/api/v1`. The Pydantic models in
-`backend/app/models.py` and the TypeScript types in `frontend/src/lib/types.ts`
-mirror each other — this is the integration boundary with the external n8n and
-pentest-tool teams. **Keep the shapes stable.**
+### Explainable AI
 
-| Endpoint | Method | Role | Purpose |
-|----------|--------|------|---------|
-| `/auth/login` | POST | — | Issue JWT `{token, role, username}` |
-| `/health` | GET | — | Liveness |
-| `/overview` | GET | any | Telemetry dashboard data |
-| `/ai-court/stats` | GET | any | FP auto-closed + TP shown |
-| `/ai-court/cases` | GET | any | True-positive case feed |
-| `/ai-court/cases/{id}` | GET | any | Case detail + tribunal + recommendation |
-| `/rules` | GET | any | Proposed KQL rules |
-| `/rules/{id}` | GET | any | Rule detail + KQL |
-| `/rules/{id}` | PUT | admin | Edit rule |
-| `/rules/{id}/approve` | POST | admin | Approve (stored only) |
-| `/rules/{id}/reject` | POST | admin | Reject — `reason` required |
-| `/pentest/tactics` | GET | any | MITRE tactics |
-| `/pentest/techniques?tactic=` | GET | any | Techniques for a tactic |
-| `/pentest/runs` | POST | admin | Launch run |
-| `/pentest/runs/{id}` | GET | any | Run progress + findings + AI analysis |
+Every decision includes supporting evidence and reasoning.
 
-## Notes
+### Reduced False Positives
 
-- Mock responses add 100–400 ms latency jitter so loading states feel real.
-- `prefers-reduced-motion` is respected — shaders, particles, and camera motion
-  are reduced/disabled.
-- The n8n workflows and the AGI pentest engine are **out of scope** — this repo
-  is the web platform + mock-then-real BFF only.
+Dual-agent analysis improves alert quality.
 
-### Deviation from the original brief
+### Faster Investigations
 
-- The brief specifies `pnpm`; this build uses **npm** (pnpm was not installed on
-  the build machine). `npm install` / `npm run dev` work identically. Swap to
-  pnpm freely if preferred.
+Automated context gathering and analysis.
+
+### Continuous Validation
+
+Regular adversary emulation against existing controls.
+
+### Flexible Deployment
+
+Supports both cloud-hosted and local AI models.
+
+### Automated Reporting
+
+Reduces manual reporting effort.
+
+---
+
+# Technology Stack
+
+* Python
+* Atomic Red Team
+* JSON Processing
+* HTML Reporting
+* REST APIs
+* Large Language Models (LLMs)
+
+---
+
+# Future Roadmap
+
+* SIEM integrations
+* EDR integrations
+* Detection rule generation
+* Continuous attack simulation
+* Multi-stage attack chain emulation
+* Automated remediation recommendations
+* Threat intelligence integration
+* SOC analyst copilot capabilities
+
+---
+
+# Team
+
+| Member                 |
+| ---------------------- |
+| Zaur Mammadbayli       |
+| Nargiz Heydarli        |
+| Ali Karimov            |
+| Mahammadali Huseynzade |
+| Cavidan Ashurlu        |
+| Elvin Mammadzada       |
+
+---
+
+# Vision
+
+PhantomX aims to redefine how organizations validate detections and assess defensive readiness by combining explainable multi-agent AI with autonomous adversary emulation.
+
+Instead of replacing analysts, PhantomX empowers them with transparent reasoning, automated validation, and actionable intelligence—allowing security teams to focus on what matters most: defending their environment.
+
+---
+
+**AEADE 2026 Hackathon Project**
