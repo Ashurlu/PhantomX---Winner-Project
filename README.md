@@ -332,12 +332,13 @@ Reduces manual reporting effort.
 
 | Member                 |
 | ---------------------- |
-| Zaur                   |
-| Nargiz                 |
-| Ali                    |
-| Mahammadali            |
-| Cavidan                |
-| Elvin                  |
+
+| Zaur Mammadbayli       |
+| Nargiz Heydarli        |
+| Ali Karimov            |
+| Mahammadali Huseynzade |
+| Cavidan Ashurlu        |
+| Elvin Mammadzada       |
 
 ---
 
