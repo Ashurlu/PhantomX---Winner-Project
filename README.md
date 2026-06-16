@@ -1,218 +1,103 @@
-# Adversary Emulation & Automated Detection Engineering (AEADE)
+<div align="center">
 
-### Powered by PhantomX
+# PhantomX
 
-> AI-Powered Detection Validation, Adversary Emulation, and Automated Security Assessment
+### Adversary Emulation & Automated Detection Engineering (AEADE)
+
+AI-Powered Detection Validation • Adversary Emulation • Automated Security Assessment
+
+![Status](https://img.shields.io/badge/Status-Prototype-blue)
+![Category](https://img.shields.io/badge/Category-Cybersecurity-darkgreen)
+![Architecture](https://img.shields.io/badge/Architecture-Multi--Agent%20AI-black)
+![Hackathon](https://img.shields.io/badge/Hackathon-2026-success)
+
+---
+
+**Continuous Security Validation Through Multi-Agent Intelligence**
+
+</div>
 
 ---
 
 ## Overview
 
-**PhantomX** is an AI-driven cybersecurity platform developed as part of the **Adversary Emulation & Automated Detection Engineering (AEADE)** project.
+PhantomX is an AI-driven cybersecurity platform designed to improve detection engineering, security validation, and defensive readiness through autonomous adversary emulation and multi-agent AI reasoning.
 
-The platform combines multi-agent AI reasoning with automated adversary emulation to help organizations validate detections, reduce false positives, assess defensive capabilities, and generate actionable security reports.
+The platform combines three independent AI agents with automated attack simulation to help organizations:
 
-By leveraging multiple specialized AI agents and real-world attack simulations, PhantomX provides security teams with a transparent and explainable approach to threat detection and security validation.
-
----
-
-## Problem Statement
-
-Modern security teams face several challenges:
-
-* Large volumes of security alerts
-* High false-positive rates
-* Alert fatigue among analysts
-* Limited visibility into detection effectiveness
-* Time-consuming penetration testing and validation processes
-
-PhantomX addresses these challenges through automated analysis, adversarial AI reasoning, and continuous security validation.
+* Validate security alerts
+* Reduce false positives
+* Identify detection gaps
+* Continuously assess defensive capabilities
+* Generate automated security reports
 
 ---
 
-# Core Features
+## Core Components
 
-## 🧠 Multi-Agent Detection Validation Engine
+<table>
+<tr>
+<td width="50%">
 
-PhantomX introduces a courtroom-inspired AI architecture that evaluates security alerts using multiple independent agents.
+### Detection Validation Engine
 
-### True Positive Agent
+A courtroom-inspired AI architecture where multiple agents independently analyze the same security event.
 
-This agent analyzes incoming events and argues why the alert represents a genuine threat.
+**Components**
 
-Responsibilities:
+* True Positive Agent
+* False Positive Agent
+* Judge Agent
+* Confidence Scoring
 
-* Threat analysis
-* IOC correlation
-* MITRE ATT&CK mapping
-* Risk assessment
-* Supporting evidence collection
+</td>
 
----
+<td width="50%">
 
-### False Positive Agent
+### Adversary Emulation Engine
 
-This agent analyzes the same event and argues why the alert may not represent malicious activity.
+Automated execution of real-world attack techniques for continuous security validation.
 
-Responsibilities:
+**Capabilities**
 
-* Environmental context analysis
-* Baseline behavior comparison
-* Exception identification
-* False positive detection
+* Atomic Red Team Execution
+* TTP Validation
+* Detection Coverage Assessment
+* Automated Reporting
 
----
-
-### Judge Agent
-
-The Judge Agent evaluates both perspectives and delivers a final verdict.
-
-Possible outcomes:
-
-* True Positive
-* False Positive
-* Requires Further Investigation
-
-The judge also generates:
-
-* Confidence score
-* Supporting rationale
-* Investigation recommendations
+</td>
+</tr>
+</table>
 
 ---
 
-## ⚔️ AGI Adversary Emulation Engine
-
-The second major component of PhantomX is its autonomous security validation framework.
-
-Users can select testing scopes such as:
-
-* Standard User
-* Administrator
-* Domain User
-* Domain Administrator
-* Custom Assessment Profiles
-
-The platform then:
-
-1. Selects appropriate attack techniques.
-2. Executes Atomic Red Team tests.
-3. Collects execution results.
-4. Converts outputs into structured JSON.
-5. Analyzes findings using AI.
-6. Generates professional reports.
-
----
-
-## 🔥 Atomic Red Team Integration
-
-PhantomX leverages Atomic Red Team techniques to emulate real-world adversary behavior.
-
-Examples include:
-
-* Credential Access
-* Discovery
-* Privilege Escalation
-* Persistence
-* Lateral Movement
-* Defense Evasion
-* Collection
-* Exfiltration
-
-This enables organizations to continuously validate security controls against known attack patterns.
-
----
-
-## 📊 AI-Powered Report Generation
-
-After execution, PhantomX automatically generates professional HTML reports.
-
-Generated content includes:
-
-### Executive Summary
-
-* Overall security posture
-* High-level findings
-* Risk overview
-
-### Technical Findings
-
-* Executed TTPs
-* Detection results
-* Security gaps
-
-### Detection Analysis
-
-* Successful detections
-* Missed detections
-* Detection coverage assessment
-
-### Recommendations
-
-* Remediation guidance
-* Detection engineering improvements
-* Security hardening recommendations
-
----
-
-## 🔌 Configurable AI Providers
-
-PhantomX is designed to be AI-provider agnostic.
-
-Supported deployments include:
-
-### Cloud Models
-
-* OpenAI
-* Anthropic Claude
-* Google Gemini
-* Azure OpenAI
-
-### Local Models
-
-* Ollama
-* Llama
-* Mistral
-* Qwen
-* Custom self-hosted models
-
-Organizations can fully operate PhantomX in air-gapped environments using local LLMs.
-
----
-
-# System Architecture
+## Multi-Agent Decision Workflow
 
 ```text
-                    ┌────────────────────┐
-                    │ Incoming Security  │
-                    │       Events       │
-                    └──────────┬─────────┘
-                               │
-                               ▼
+                     Security Event
+                            │
+                            ▼
 
-                ┌───────────────────────────┐
-                │ Multi-Agent Analysis Layer│
-                └───────────────────────────┘
-                     │                │
-                     ▼                ▼
+        ┌───────────────────────────────┐
+        │     Multi-Agent Analysis      │
+        └───────────────────────────────┘
 
-        ┌─────────────────┐  ┌─────────────────┐
-        │ True Positive   │  │ False Positive  │
-        │     Agent       │  │      Agent      │
-        └────────┬────────┘  └────────┬────────┘
-                 │                    │
-                 └────────┬───────────┘
-                          ▼
+                 │               │
 
-                ┌───────────────────┐
-                │    Judge Agent    │
-                └─────────┬─────────┘
-                          ▼
+                 ▼               ▼
 
-                ┌───────────────────┐
-                │ Final Verdict &   │
-                │ Confidence Score  │
-                └───────────────────┘
+      True Positive Agent   False Positive Agent
+
+                 │               │
+
+                 └───────┬───────┘
+                         ▼
+
+                   Judge Agent
+
+                         ▼
+
+              Final Verdict + Score
 ```
 
 ---
@@ -220,119 +105,83 @@ Organizations can fully operate PhantomX in air-gapped environments using local 
 ## Adversary Emulation Workflow
 
 ```text
-Selected Scope
-      │
-      ▼
+        Selected Assessment Scope
+                     │
+                     ▼
 
-Atomic Red Team Execution
-      │
-      ▼
+         Atomic Red Team Execution
+                     │
+                     ▼
 
-Result Collection
-      │
-      ▼
+           Telemetry Collection
+                     │
+                     ▼
 
-JSON Conversion
-      │
-      ▼
+              JSON Processing
+                     │
+                     ▼
 
-AI Analysis
-      │
-      ▼
+                AI Analysis
+                     │
+                     ▼
 
-HTML Report Generation
+         HTML Security Assessment
 ```
 
 ---
 
-# Use Cases
+## Feature Matrix
 
-## Security Operations Centers (SOC)
-
-* Alert validation
-* Threat triage
-* Investigation assistance
-
-## Detection Engineering
-
-* Detection validation
-* Coverage assessment
-* Rule tuning
-
-## Red Teams
-
-* Adversary emulation
-* Security control testing
-
-## Blue Teams
-
-* Defensive readiness validation
-* Incident response preparation
-
-## Security Consultants
-
-* Automated assessment support
-* Report generation
+| Capability             | Description                                       |
+| ---------------------- | ------------------------------------------------- |
+| Multi-Agent Validation | Independent AI analysis with explainable verdicts |
+| Adversary Emulation    | Automated execution of Atomic Red Team techniques |
+| Detection Engineering  | Validation of existing security detections        |
+| Security Assessment    | Identification of defensive gaps                  |
+| Automated Reporting    | AI-generated HTML reports                         |
+| Flexible AI Providers  | Cloud and local model support                     |
 
 ---
 
-# Key Benefits
+## Technology Stack
 
-### Explainable AI
-
-Every decision includes supporting evidence and reasoning.
-
-### Reduced False Positives
-
-Dual-agent analysis improves alert quality.
-
-### Faster Investigations
-
-Automated context gathering and analysis.
-
-### Continuous Validation
-
-Regular adversary emulation against existing controls.
-
-### Flexible Deployment
-
-Supports both cloud-hosted and local AI models.
-
-### Automated Reporting
-
-Reduces manual reporting effort.
+| Layer               | Technologies                            |
+| ------------------- | --------------------------------------- |
+| Frontend            | *Add your technologies*                 |
+| Backend             | *Add your technologies*                 |
+| AI Layer            | OpenAI / Gemini / Ollama / Local Models |
+| Adversary Emulation | Atomic Red Team                         |
+| Data Processing     | JSON Pipelines                          |
+| Reporting           | HTML Report Generation                  |
 
 ---
 
-# Technology Stack
+## Market Opportunity
 
-* Python
-* Atomic Red Team
-* JSON Processing
-* HTML Reporting
-* REST APIs
-* Large Language Models (LLMs)
-
----
-
-# Future Roadmap
-
-* SIEM integrations
-* EDR integrations
-* Detection rule generation
-* Continuous attack simulation
-* Multi-stage attack chain emulation
-* Automated remediation recommendations
-* Threat intelligence integration
-* SOC analyst copilot capabilities
+| Segment | Market Size |
+| ------- | ----------- |
+| TAM     | $40B+       |
+| SAM     | $3B–$5B     |
+| SOM     | $1.5M–$5M   |
 
 ---
 
-# Team
+## Development Roadmap
+
+| Phase   | Objective                      |
+| ------- | ------------------------------ |
+| Phase 1 | Multi-Agent AI Framework       |
+| Phase 2 | Atomic Red Team Integration    |
+| Phase 3 | Report Generation              |
+| Phase 4 | Detection Validation Testing   |
+| Phase 5 | Continuous Security Validation |
+
+---
+
+## Team
 
 | Member                 |
 | ---------------------- |
-
 | Zaur Mammadbayli       |
 | Nargiz Heydarli        |
 | Ali Karimov            |
@@ -342,12 +191,12 @@ Reduces manual reporting effort.
 
 ---
 
-# Vision
+<div align="center">
 
-PhantomX aims to redefine how organizations validate detections and assess defensive readiness by combining explainable multi-agent AI with autonomous adversary emulation.
+### PhantomX
 
-Instead of replacing analysts, PhantomX empowers them with transparent reasoning, automated validation, and actionable intelligence—allowing security teams to focus on what matters most: defending their environment.
+Adversary Emulation & Automated Detection Engineering
 
----
+*Built for AEADE Hackathon 2026*
 
-**AEADE 2026 Hackathon Project**
+</div>
