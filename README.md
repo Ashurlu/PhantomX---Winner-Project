@@ -421,6 +421,4 @@ By combining explainable multi-agent artificial intelligence with automated adve
 
 Adversary Emulation & Automated Detection Engineering
 
-*Built for AEADE Hackathon 2026*
-
 </div>
