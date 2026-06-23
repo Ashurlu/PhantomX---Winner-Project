@@ -22,13 +22,14 @@ import { ErrorState } from "@/components/States";
 import { UserAvatar } from "@/components/UserAvatar";
 import { toast } from "@/components/ui/sonner";
 import {
+  ApiError,
   useDeleteUser,
   useSetUserActive,
   useSetUserRole,
   useUsers,
 } from "@/lib/api";
 import { resolveAvatarUrl } from "@/lib/avatars";
-import { useAuth } from "@/store/auth";
+import { useAuth, useAdminQueryEnabled } from "@/store/auth";
 import type { UserOut } from "@/lib/types";
 import { ChangePasswordDialog } from "./ChangePasswordDialog";
 import { CreateUserDialog } from "./CreateUserDialog";
@@ -49,8 +50,11 @@ function formatLastLogin(iso: string): string {
 }
 
 export function UsersTab() {
-  const { data, isLoading, isError, refetch } = useUsers();
+  const adminReady = useAdminQueryEnabled();
+  const { data, isLoading, isError, error, refetch, isFetching } = useUsers();
   const me = useAuth((s) => s.username);
+
+  const showLoading = !adminReady || isLoading || (isFetching && !data);
 
   return (
     <Card>
@@ -61,14 +65,31 @@ export function UsersTab() {
         <CreateUserDialog />
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {showLoading ? (
           <div className="flex flex-col gap-2">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>
         ) : isError ? (
-          <ErrorState message="Failed to load users." onRetry={() => refetch()} />
+          <ErrorState
+            message={
+              error instanceof ApiError
+                ? `${error.message} — check that the backend is running and you are logged in as admin.`
+                : "Failed to load users."
+            }
+            onRetry={() => refetch()}
+          />
+        ) : !data?.length ? (
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border/60 py-12 text-center">
+            <UserCog className="h-10 w-10 text-muted-foreground/50" />
+            <div>
+              <p className="text-sm font-medium text-foreground">No users yet</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Create an account with Add User, or sign up from the login page.
+              </p>
+            </div>
+          </div>
         ) : (
           <Table>
             <TableHeader>
@@ -83,7 +104,7 @@ export function UsersTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.map((u) => (
+              {data.map((u) => (
                 <UserRow key={u.username} u={u} isSelf={u.username === me} />
               ))}
             </TableBody>

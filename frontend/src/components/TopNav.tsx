@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/overview", label: "Overview" },
+  { to: "/cases", label: "Cases" },
   { to: "/detection", label: "Detection" },
   { to: "/ai-court", label: "AI Court" },
   { to: "/rules", label: "Recommended Rules" },

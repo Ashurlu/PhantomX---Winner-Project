@@ -1,59 +1,285 @@
 {
-  "totalAlerts": 6119,
-  "weeklyAverage": 105,
+  "totalAlerts": 2847,
+  "weeklyAverage": 118,
   "categories": [
-    { "name": "Endpoint", "value": 2068, "color": "#ec4899" },
-    { "name": "Email", "value": 1789, "color": "#3b82f6" },
-    { "name": "Identity", "value": 966, "color": "#6366f1" },
-    { "name": "Cloud", "value": 648, "color": "#06b6d4" },
-    { "name": "Threat Intel", "value": 469, "color": "#14b8a6" },
-    { "name": "Insider Threat", "value": 179, "color": "#94a3b8" }
+    {
+      "name": "Endpoint",
+      "value": 982,
+      "color": "#ec4899"
+    },
+    {
+      "name": "Email",
+      "value": 712,
+      "color": "#3b82f6"
+    },
+    {
+      "name": "Identity",
+      "value": 468,
+      "color": "#6366f1"
+    },
+    {
+      "name": "Cloud",
+      "value": 385,
+      "color": "#06b6d4"
+    },
+    {
+      "name": "Threat Intel",
+      "value": 198,
+      "color": "#14b8a6"
+    },
+    {
+      "name": "Insider Threat",
+      "value": 102,
+      "color": "#94a3b8"
+    }
   ],
   "severities": [
-    { "name": "Critical", "value": 306, "color": "#dc2626" },
-    { "name": "High", "value": 918, "color": "#f97316" },
-    { "name": "Medium", "value": 2753, "color": "#f59e0b" },
-    { "name": "Low", "value": 2142, "color": "#3B82F6" }
+    {
+      "name": "Critical",
+      "value": 142,
+      "color": "#dc2626"
+    },
+    {
+      "name": "High",
+      "value": 512,
+      "color": "#f97316"
+    },
+    {
+      "name": "Medium",
+      "value": 1288,
+      "color": "#f59e0b"
+    },
+    {
+      "name": "Low",
+      "value": 905,
+      "color": "#3B82F6"
+    }
   ],
   "sources": [
-    { "name": "Microsoft Defender", "value": 1968, "pct": 32, "tags": "Email, Threat Intel" },
-    { "name": "SentinelOne", "value": 1285, "pct": 21, "tags": "Endpoint" },
-    { "name": "CrowdStrike", "value": 1105, "pct": 18, "tags": "Endpoint, Identity" },
-    { "name": "Microsoft Sentinel", "value": 793, "pct": 13, "tags": "Cloud, Identity" },
-    { "name": "Splunk", "value": 644, "pct": 11, "tags": "Various" },
-    { "name": "AWS GuardDuty", "value": 324, "pct": 5, "tags": "Cloud" }
+    {
+      "name": "Microsoft Defender",
+      "value": 912,
+      "pct": 32,
+      "tags": "Email, Threat Intel"
+    },
+    {
+      "name": "SentinelOne",
+      "value": 598,
+      "pct": 21,
+      "tags": "Endpoint"
+    },
+    {
+      "name": "CrowdStrike",
+      "value": 512,
+      "pct": 18,
+      "tags": "Endpoint, Identity"
+    },
+    {
+      "name": "Microsoft Sentinel",
+      "value": 370,
+      "pct": 13,
+      "tags": "Cloud, Identity"
+    },
+    {
+      "name": "Splunk",
+      "value": 313,
+      "pct": 11,
+      "tags": "Various"
+    },
+    {
+      "name": "AWS GuardDuty",
+      "value": 142,
+      "pct": 5,
+      "tags": "Cloud"
+    }
   ],
   "weekly": [
-    { "day": 1, "a": 42, "b": 38, "c": 25 },
-    { "day": 2, "a": 55, "b": 44, "c": 30 },
-    { "day": 3, "a": 48, "b": 52, "c": 28 },
-    { "day": 4, "a": 62, "b": 41, "c": 35 },
-    { "day": 5, "a": 58, "b": 47, "c": 32 },
-    { "day": 6, "a": 71, "b": 53, "c": 40 },
-    { "day": 7, "a": 65, "b": 49, "c": 36 },
-    { "day": 8, "a": 52, "b": 45, "c": 29 },
-    { "day": 9, "a": 68, "b": 50, "c": 38 },
-    { "day": 10, "a": 74, "b": 56, "c": 42 },
-    { "day": 11, "a": 60, "b": 48, "c": 33 },
-    { "day": 12, "a": 77, "b": 54, "c": 44 },
-    { "day": 13, "a": 63, "b": 51, "c": 37 },
-    { "day": 14, "a": 70, "b": 55, "c": 41 },
-    { "day": 15, "a": 56, "b": 46, "c": 31 },
-    { "day": 16, "a": 72, "b": 57, "c": 43 },
-    { "day": 17, "a": 66, "b": 52, "c": 39 },
-    { "day": 18, "a": 59, "b": 47, "c": 34 },
-    { "day": 19, "a": 75, "b": 58, "c": 45 },
-    { "day": 20, "a": 61, "b": 49, "c": 35 },
-    { "day": 21, "a": 69, "b": 53, "c": 40 },
-    { "day": 22, "a": 54, "b": 43, "c": 28 },
-    { "day": 23, "a": 73, "b": 56, "c": 42 },
-    { "day": 24, "a": 67, "b": 51, "c": 38 },
-    { "day": 25, "a": 64, "b": 50, "c": 36 },
-    { "day": 26, "a": 78, "b": 59, "c": 46 },
-    { "day": 27, "a": 57, "b": 45, "c": 30 },
-    { "day": 28, "a": 71, "b": 54, "c": 41 },
-    { "day": 29, "a": 65, "b": 52, "c": 37 },
-    { "day": 30, "a": 76, "b": 57, "c": 44 }
+    {
+      "day": 1,
+      "a": 48,
+      "b": 40,
+      "c": 29
+    },
+    {
+      "day": 2,
+      "a": 51,
+      "b": 42,
+      "c": 30
+    },
+    {
+      "day": 3,
+      "a": 54,
+      "b": 44,
+      "c": 31
+    },
+    {
+      "day": 4,
+      "a": 57,
+      "b": 46,
+      "c": 28
+    },
+    {
+      "day": 5,
+      "a": 60,
+      "b": 38,
+      "c": 29
+    },
+    {
+      "day": 6,
+      "a": 63,
+      "b": 40,
+      "c": 30
+    },
+    {
+      "day": 7,
+      "a": 45,
+      "b": 42,
+      "c": 31
+    },
+    {
+      "day": 8,
+      "a": 48,
+      "b": 44,
+      "c": 28
+    },
+    {
+      "day": 9,
+      "a": 51,
+      "b": 46,
+      "c": 29
+    },
+    {
+      "day": 10,
+      "a": 54,
+      "b": 38,
+      "c": 30
+    },
+    {
+      "day": 11,
+      "a": 57,
+      "b": 40,
+      "c": 31
+    },
+    {
+      "day": 12,
+      "a": 60,
+      "b": 42,
+      "c": 28
+    },
+    {
+      "day": 13,
+      "a": 63,
+      "b": 44,
+      "c": 29
+    },
+    {
+      "day": 14,
+      "a": 45,
+      "b": 46,
+      "c": 30
+    },
+    {
+      "day": 15,
+      "a": 48,
+      "b": 38,
+      "c": 31
+    },
+    {
+      "day": 16,
+      "a": 51,
+      "b": 40,
+      "c": 28
+    },
+    {
+      "day": 17,
+      "a": 54,
+      "b": 42,
+      "c": 29
+    },
+    {
+      "day": 18,
+      "a": 57,
+      "b": 44,
+      "c": 30
+    },
+    {
+      "day": 19,
+      "a": 60,
+      "b": 46,
+      "c": 31
+    },
+    {
+      "day": 20,
+      "a": 63,
+      "b": 38,
+      "c": 28
+    },
+    {
+      "day": 21,
+      "a": 45,
+      "b": 40,
+      "c": 29
+    },
+    {
+      "day": 22,
+      "a": 48,
+      "b": 42,
+      "c": 30
+    },
+    {
+      "day": 23,
+      "a": 51,
+      "b": 44,
+      "c": 31
+    },
+    {
+      "day": 24,
+      "a": 54,
+      "b": 46,
+      "c": 28
+    },
+    {
+      "day": 25,
+      "a": 57,
+      "b": 38,
+      "c": 29
+    },
+    {
+      "day": 26,
+      "a": 60,
+      "b": 40,
+      "c": 30
+    },
+    {
+      "day": 27,
+      "a": 63,
+      "b": 42,
+      "c": 31
+    },
+    {
+      "day": 28,
+      "a": 45,
+      "b": 44,
+      "c": 28
+    },
+    {
+      "day": 29,
+      "a": 48,
+      "b": 46,
+      "c": 29
+    },
+    {
+      "day": 30,
+      "a": 51,
+      "b": 38,
+      "c": 30
+    }
   ],
-  "weeklyLegend": ["CrowdStrike", "Splunk", "Microsoft Defender", "Sumo Logic", "Other"]
+  "weeklyLegend": [
+    "CrowdStrike",
+    "Splunk",
+    "Microsoft Defender",
+    "Sumo Logic",
+    "Other"
+  ]
 }

@@ -88,6 +88,15 @@ class LiveProvider:
     async def ai_court_case(self, alert_id: str) -> dict | None:
         return await mock_provider.ai_court_case(alert_id)
 
+    async def cases_inbox(self) -> list[dict]:
+        return await mock_provider.cases_inbox()
+
+    async def cases_inbox_case(self, case_id: str) -> dict | None:
+        return await mock_provider.cases_inbox_case(case_id)
+
+    async def cases_inbox_stats(self) -> dict:
+        return await mock_provider.cases_inbox_stats()
+
     async def rules(self) -> list[dict]:
         return await mock_provider.rules()
 
@@ -108,11 +117,11 @@ class LiveProvider:
     async def update_rule(self, rule_id: str, patch: dict) -> dict | None:
         return await mock_provider.update_rule(rule_id, patch)
 
-    async def approve_rule(self, rule_id: str) -> dict | None:
-        return await mock_provider.approve_rule(rule_id)
+    async def approve_rule(self, rule_id: str, actor: str | None = None) -> dict | None:
+        return await mock_provider.approve_rule(rule_id, actor=actor)
 
-    async def reject_rule(self, rule_id: str, reason: str) -> dict | None:
-        return await mock_provider.reject_rule(rule_id, reason)
+    async def reject_rule(self, rule_id: str, reason: str, actor: str | None = None) -> dict | None:
+        return await mock_provider.reject_rule(rule_id, reason, actor=actor)
 
     # ── Pentest engine ──────────────────────────────────────────────────────
     def _engine(self) -> PentestEngine:

@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/States";
 import { useAuditLog } from "@/lib/api";
+import { AdminTabLoader } from "./AdminTabLoader";
 import type { AuditEntry } from "@/lib/types";
 
 const ACTION_META: Record<string, { icon: LucideIcon; color: string; label: string }> = {
@@ -40,9 +41,10 @@ function meta(action: string) {
 }
 
 export function AuditLogTab() {
-  const { data, isLoading, isError, refetch } = useAuditLog();
+  const { data, isLoading, isError, refetch, isFetching } = useAuditLog();
 
   return (
+    <AdminTabLoader>
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
@@ -53,7 +55,7 @@ export function AuditLogTab() {
         </span>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {isLoading || (isFetching && !data) ? (
           <div className="flex flex-col gap-2">
             {Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} className="h-12 w-full" />
@@ -72,6 +74,7 @@ export function AuditLogTab() {
         )}
       </CardContent>
     </Card>
+    </AdminTabLoader>
   );
 }
 

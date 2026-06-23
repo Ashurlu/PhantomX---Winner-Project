@@ -17,7 +17,9 @@ import {
 } from "@/components/ui/dialog";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAiCourtCase, useRules } from "@/lib/api";
+import { useAiCourtCase, useAiCourtCases, useCasesInbox, useRules } from "@/lib/api";
+import { CaseAssigneeBadge } from "./CaseAssigneeBadge";
+import { resolveAssignee } from "./ai-court-helpers";
 import type { CaseDetail } from "@/lib/types";
 
 export function CaseDetailDialog({
@@ -58,7 +60,12 @@ function confidenceMeta(confidence: number) {
 
 function CaseBody({ data, onClose }: { data: CaseDetail; onClose?: () => void }) {
   const rules = useRules();
+  const courtCases = useAiCourtCases();
+  const inbox = useCasesInbox();
   const linkedRule = rules.data?.find((r) => r.sourceAlertId === data.alertId);
+  const courtSummary = courtCases.data?.find((c) => c.alertId === data.alertId);
+  const linkedCaseId = courtSummary?.linkedCaseId;
+  const assignee = courtSummary ? resolveAssignee(inbox.data, courtSummary) : null;
   const conf = confidenceMeta(data.tribunal.confidence);
   const pct = Math.round(data.tribunal.confidence * 100);
 
@@ -88,6 +95,30 @@ function CaseBody({ data, onClose }: { data: CaseDetail; onClose?: () => void })
           </span>
           <span className="text-xs font-medium text-accent">View rule →</span>
         </Link>
+      )}
+
+      {linkedCaseId && (
+        <Link
+          to={`/cases?case=${encodeURIComponent(linkedCaseId)}`}
+          onClick={onClose}
+          className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm transition-colors hover:bg-primary/10"
+        >
+          <span className="text-muted-foreground">
+            Incident case{" "}
+            <span className="font-mono font-semibold text-foreground">{linkedCaseId}</span>
+          </span>
+          <div className="flex items-center gap-3">
+            <CaseAssigneeBadge assignee={assignee} showLabel />
+            <span className="text-xs font-medium text-primary">Open in Cases →</span>
+          </div>
+        </Link>
+      )}
+
+      {!linkedCaseId && (
+        <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 px-3 py-2 text-sm">
+          <span className="text-muted-foreground">Incident case assignment</span>
+          <CaseAssigneeBadge assignee={assignee} showLabel />
+        </div>
       )}
 
       {/* Confidence */}

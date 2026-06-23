@@ -3,9 +3,10 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useAuth } from "@/store/auth";
+import { useAuth, useAuthHydrated, useAdminQueryEnabled } from "@/store/auth";
 import { rangeCodeFromTimestamps, useUi } from "@/store/ui";
 import { detectionFallback } from "@/lib/detection-fallback";
+import { casesInboxCaseFallback, casesInboxFallback } from "@/lib/cases-fallback";
 import {
   searchTechniquesFallback,
   tacticsFallback,
@@ -19,6 +20,10 @@ import type {
   AuditEntry,
   CaseDetail,
   CaseSummary,
+  InboxCase,
+  InboxCaseDetail,
+  InboxStats,
+  CaseAssignee,
   ConnectionTestResult,
   ConnTarget,
   CoverageEntry,
@@ -40,6 +45,7 @@ import type {
   TestSelection,
   UserOut,
   UserProfile,
+  ChatResponse,
 } from "./types";
 
 const BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
@@ -244,6 +250,55 @@ export function useAiCourtCase(alertId: string | null) {
   });
 }
 
+// ---------- Case Management Inbox ----------
+export function useCasesInbox() {
+  return useQuery({
+    queryKey: ["cases", "inbox"],
+    queryFn: async () => {
+      try {
+        return await request<InboxCase[]>("/cases/inbox");
+      } catch {
+        return casesInboxFallback();
+      }
+    },
+    refetchInterval: 30000,
+  });
+}
+
+export function useCasesInboxCase(caseId: string | null) {
+  return useQuery({
+    queryKey: ["cases", "inbox", caseId],
+    queryFn: async () => {
+      try {
+        return await request<InboxCaseDetail>(`/cases/inbox/${caseId}`);
+      } catch {
+        return casesInboxCaseFallback(caseId!);
+      }
+    },
+    enabled: !!caseId,
+    // Never show the previous case's detail while switching selection
+    placeholderData: undefined,
+  });
+}
+
+export function useCasesInboxStats() {
+  return useQuery({
+    queryKey: ["cases", "inbox", "stats"],
+    queryFn: () => request<InboxStats>("/cases/stats"),
+  });
+}
+
+export function useCaseAssignees() {
+  const token = useAuth((s) => s.token);
+  const hasHydrated = useAuthHydrated();
+  return useQuery({
+    queryKey: ["cases", "assignees"],
+    queryFn: () => request<CaseAssignee[]>("/cases/assignees"),
+    enabled: hasHydrated && !!token,
+    staleTime: 60_000,
+  });
+}
+
 // ---------- Rules ----------
 export function useRules() {
   return useQuery({
@@ -437,9 +492,11 @@ export async function openRunReport(runId: string) {
 
 // ---------- Admin ----------
 export function useAdminSettings() {
+  const enabled = useAdminQueryEnabled();
   return useQuery({
     queryKey: ["admin", "settings"],
     queryFn: () => request<AdminSettings>("/admin/settings"),
+    enabled,
   });
 }
 
@@ -458,9 +515,11 @@ export function useUpdateSettings() {
 }
 
 export function useUsers() {
+  const enabled = useAdminQueryEnabled();
   return useQuery({
     queryKey: ["admin", "users"],
     queryFn: () => request<UserOut[]>("/admin/users"),
+    enabled,
   });
 }
 
@@ -494,14 +553,17 @@ export function useSetUserActive() {
 }
 
 export function useCreateUser() {
-  const invalidate = useInvalidateAdmin();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: CreateUserReq) =>
       request<UserOut>("/admin/users", {
         method: "POST",
         body: JSON.stringify(body),
       }),
-    onSuccess: invalidate,
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["admin"] });
+      await qc.invalidateQueries({ queryKey: ["cases", "assignees"] });
+    },
   });
 }
 
@@ -529,17 +591,21 @@ export function useDeleteUser() {
 }
 
 export function useSystemStatus() {
+  const enabled = useAdminQueryEnabled();
   return useQuery({
     queryKey: ["admin", "status"],
     queryFn: () => request<SystemStatus>("/admin/status"),
+    enabled,
   });
 }
 
 export function useAuditLog() {
+  const enabled = useAdminQueryEnabled();
   return useQuery({
     queryKey: ["admin", "audit"],
     queryFn: () => request<AuditEntry[]>("/admin/audit"),
-    refetchInterval: 10000,
+    refetchInterval: enabled ? 10000 : false,
+    enabled,
   });
 }
 
@@ -614,4 +680,18 @@ export async function downloadNavigatorLayer() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+// ---------- SOC Chat ----------
+export function useSocChat() {
+  return useMutation({
+    mutationFn: (body: {
+      message: string;
+      history: { role: "user" | "assistant"; content: string }[];
+    }) =>
+      request<ChatResponse>("/chat", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+  });
 }

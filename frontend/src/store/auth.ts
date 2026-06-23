@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -31,6 +32,31 @@ export const useAuth = create<AuthState>()(
       logout: () => set({ token: null, role: null, username: null, avatarUrl: null }),
       isAdmin: () => get().role === "admin",
     }),
-    { name: "sentrix-auth" }
+    {
+      name: "sentrix-auth",
+      partialize: (state) => ({
+        token: state.token,
+        role: state.role,
+        username: state.username,
+        avatarUrl: state.avatarUrl,
+      }),
+    }
   )
 );
+
+/** Zustand v5 — wait until localStorage auth has been restored. */
+export function useAuthHydrated() {
+  return useSyncExternalStore(
+    useAuth.persist.onFinishHydration,
+    () => useAuth.persist.hasHydrated(),
+    () => false
+  );
+}
+
+/** True once persisted auth has rehydrated and the user is an admin with a token. */
+export function useAdminQueryEnabled() {
+  const token = useAuth((s) => s.token);
+  const role = useAuth((s) => s.role);
+  const hasHydrated = useAuthHydrated();
+  return hasHydrated && !!token && role === "admin";
+}

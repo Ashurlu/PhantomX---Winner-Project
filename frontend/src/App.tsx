@@ -11,6 +11,7 @@ import { Signup } from "@/pages/Signup";
 import { OverviewPage } from "@/modules/overview/OverviewPage";
 import { DetectionPage } from "@/modules/detection/DetectionPage";
 import { AiCourtPage } from "@/modules/ai-court/AiCourtPage";
+import { CasesInboxPage } from "@/modules/cases/CasesInboxPage";
 import { RulesPage } from "@/modules/rules/RulesPage";
 import { PentestPage } from "@/modules/pentest/PentestPage";
 import { AdminPage } from "@/modules/admin/AdminPage";
@@ -35,6 +36,7 @@ export default function App() {
         }
       >
         <Route path="/overview" element={<OverviewPage />} />
+        <Route path="/cases" element={<CasesInboxPage />} />
         <Route path="/detection" element={<DetectionPage />} />
         <Route path="/ai-court" element={<AiCourtPage />} />
         <Route path="/rules" element={<RulesPage />} />

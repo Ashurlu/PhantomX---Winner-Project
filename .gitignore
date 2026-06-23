@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 backend/.env
 backend/app/data/
+.env.prod
 
 # Node
 frontend/node_modules/

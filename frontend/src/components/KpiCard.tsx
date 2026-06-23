@@ -25,7 +25,7 @@ export function KpiCard({
   const gid = `g-${label.replace(/\s/g, "")}`;
 
   return (
-    <Card className="relative overflow-hidden p-5">
+    <Card className="glass-hover relative overflow-hidden p-5">
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">

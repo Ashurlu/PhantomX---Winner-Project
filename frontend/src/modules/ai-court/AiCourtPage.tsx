@@ -7,16 +7,19 @@ import { SeverityBadge } from "@/components/SeverityBadge";
 import { Tribunal } from "@/three/Tribunal";
 import { ErrorState, LoadingState } from "@/components/States";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAiCourtCases, useAiCourtStats } from "@/lib/api";
+import { useAiCourtCases, useAiCourtStats, useCasesInbox } from "@/lib/api";
+import { CaseAssigneeBadge } from "./CaseAssigneeBadge";
+import { resolveAssignee } from "./ai-court-helpers";
 import { formatTimeRangeShort } from "@/lib/time-range";
 import { formatNumber } from "@/lib/utils";
 import { useUi } from "@/store/ui";
 import { CaseDetailDialog } from "./CaseDetailDialog";
-import type { CaseSummary } from "@/lib/types";
+import type { CaseAssignee, CaseSummary } from "@/lib/types";
 
 export function AiCourtPage() {
   const stats = useAiCourtStats();
   const cases = useAiCourtCases();
+  const inbox = useCasesInbox();
   const { timeFrom, timeTo } = useUi();
   const periodLabel = formatTimeRangeShort(timeFrom, timeTo);
   const [selected, setSelected] = useState<string | null>(null);
@@ -98,7 +101,13 @@ export function AiCourtPage() {
               <ErrorState message="Failed to load cases." onRetry={() => cases.refetch()} />
             ) : (
               cases.data?.map((c, i) => (
-                <CaseRow key={c.alertId} c={c} index={i} onOpen={() => setSelected(c.alertId)} />
+                <CaseRow
+                  key={c.alertId}
+                  c={c}
+                  assignee={resolveAssignee(inbox.data, c)}
+                  index={i}
+                  onOpen={() => setSelected(c.alertId)}
+                />
               ))
             )}
           </CardContent>
@@ -116,10 +125,12 @@ export function AiCourtPage() {
 
 function CaseRow({
   c,
+  assignee,
   index,
   onOpen,
 }: {
   c: CaseSummary;
+  assignee: CaseAssignee | null;
   index: number;
   onOpen: () => void;
 }) {
@@ -136,13 +147,16 @@ function CaseRow({
         <SeverityBadge severity={c.severity} />
       </div>
       <span className="text-sm font-medium leading-snug">{c.title}</span>
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-xs text-muted-foreground">
           {c.recommendationSummary}
         </span>
         <span className="font-mono text-xs font-semibold text-primary">
           {Math.round(c.confidence * 100)}%
         </span>
+      </div>
+      <div className="flex items-center justify-end">
+        <CaseAssigneeBadge assignee={assignee} showLabel />
       </div>
     </motion.button>
   );

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/States";
 import { useSystemStatus, useTestConnection } from "@/lib/api";
+import { AdminTabLoader } from "./AdminTabLoader";
 import type { ConnTarget } from "@/lib/types";
 
 function targetForName(name: string): ConnTarget {
@@ -22,12 +23,15 @@ function targetForName(name: string): ConnTarget {
 }
 
 export function StatusTab() {
-  const { data, isLoading, isError, refetch } = useSystemStatus();
-
-  if (isError) return <ErrorState message="Failed to load status." onRetry={() => refetch()} />;
-  if (isLoading || !data) return <Skeleton className="h-48 w-full" />;
+  const { data, isLoading, isError, refetch, isFetching } = useSystemStatus();
 
   return (
+    <AdminTabLoader>
+      {isError ? (
+        <ErrorState message="Failed to load status." onRetry={() => refetch()} />
+      ) : isLoading || (isFetching && !data) || !data ? (
+        <Skeleton className="h-48 w-full" />
+      ) : (
     <div className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-4">
         <Stat
@@ -52,6 +56,8 @@ export function StatusTab() {
         </CardContent>
       </Card>
     </div>
+      )}
+    </AdminTabLoader>
   );
 }
 

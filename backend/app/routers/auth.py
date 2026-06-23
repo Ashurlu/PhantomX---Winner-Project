@@ -35,7 +35,12 @@ async def signup(body: SignupRequest):
         raise HTTPException(status_code=422, detail="Password must be at least 6 characters")
 
     # New accounts are analysts; an admin promotes them later (defense in depth).
-    created = db.create_user(username, body.password, role="analyst")
+    try:
+        created = db.create_user(username, body.password, role="analyst")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     if created is None:
         raise HTTPException(status_code=409, detail="Username already taken")
 

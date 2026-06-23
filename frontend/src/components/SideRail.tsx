@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import {
+  FolderKanban,
   Gavel,
   LayoutDashboard,
   Settings2,
@@ -20,6 +21,7 @@ interface RailItem {
 
 const ITEMS: RailItem[] = [
   { to: "/overview", label: "Overview", icon: LayoutDashboard },
+  { to: "/cases", label: "Cases", icon: FolderKanban },
   { to: "/ai-court", label: "AI Court", icon: Gavel },
   { to: "/rules", label: "Recommended Rules", icon: ShieldHalf },
   { to: "/pentest", label: "AGI Pentest", icon: Swords },

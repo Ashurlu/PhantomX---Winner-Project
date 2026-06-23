@@ -1,10 +1,128 @@
 [
-  { "alertId": "A-1042", "title": "Encoded PowerShell on HR-DC01", "severity": "high", "verdict": "TRUE_POSITIVE", "confidence": 0.92, "recommendationSummary": "Isolate host, reset creds" },
-  { "alertId": "A-1088", "title": "Suspicious OAuth grant to unknown app", "severity": "medium", "verdict": "TRUE_POSITIVE", "confidence": 0.81, "recommendationSummary": "Revoke token, review consent" },
-  { "alertId": "A-1190", "title": "LSASS memory access by non-standard process", "severity": "critical", "verdict": "TRUE_POSITIVE", "confidence": 0.97, "recommendationSummary": "Isolate, dump triage, rotate creds" },
-  { "alertId": "A-1205", "title": "Impossible travel for finance admin", "severity": "high", "verdict": "TRUE_POSITIVE", "confidence": 0.88, "recommendationSummary": "Force re-auth, lock session" },
-  { "alertId": "A-1233", "title": "Scheduled task persistence on WKS-204", "severity": "medium", "verdict": "TRUE_POSITIVE", "confidence": 0.79, "recommendationSummary": "Remove task, hunt siblings" },
-  { "alertId": "A-1310", "title": "Mass file rename consistent with ransomware", "severity": "critical", "verdict": "TRUE_POSITIVE", "confidence": 0.95, "recommendationSummary": "Isolate segment, trigger IR playbook" },
-  { "alertId": "A-1377", "title": "Outbound beacon to known C2 range", "severity": "high", "verdict": "TRUE_POSITIVE", "confidence": 0.9, "recommendationSummary": "Block egress, isolate host" },
-  { "alertId": "A-1402", "title": "Kerberoasting-style ticket requests", "severity": "medium", "verdict": "TRUE_POSITIVE", "confidence": 0.76, "recommendationSummary": "Rotate service account, monitor" }
+  {
+    "alertId": "A-1310",
+    "title": "Mass file rename consistent with ransomware",
+    "severity": "critical",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.95,
+    "recommendationSummary": "Isolate segment, trigger IR playbook",
+    "linkedCaseId": "PX-C034463"
+  },
+  {
+    "alertId": "A-1042",
+    "title": "Encoded PowerShell on HR-DC01",
+    "severity": "high",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.92,
+    "recommendationSummary": "Isolate host, reset creds",
+    "linkedCaseId": "PX-D034461"
+  },
+  {
+    "alertId": "A-1190",
+    "title": "LSASS memory access by non-standard process",
+    "severity": "critical",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.97,
+    "recommendationSummary": "Isolate, dump triage, rotate creds",
+    "linkedCaseId": "PX-D034482"
+  },
+  {
+    "alertId": "A-1455",
+    "title": "DCSync replication request from non-DC host",
+    "severity": "critical",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.94,
+    "recommendationSummary": "Disable account, reset krbtgt",
+    "linkedCaseId": "PX-D034471"
+  },
+  {
+    "alertId": "A-1420",
+    "title": "CEO impersonation wire-transfer request",
+    "severity": "high",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.89,
+    "recommendationSummary": "Block transfer, notify legal",
+    "linkedCaseId": "PX-D034470"
+  },
+  {
+    "alertId": "A-1502",
+    "title": "SQL injection attempts on customer portal",
+    "severity": "high",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.86,
+    "recommendationSummary": "WAF block, patch input validation",
+    "linkedCaseId": "PX-D034473"
+  },
+  {
+    "alertId": "A-1377",
+    "title": "Outbound beacon to known C2 range",
+    "severity": "high",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.9,
+    "recommendationSummary": "Block egress, isolate host",
+    "linkedCaseId": "INC-0034454"
+  },
+  {
+    "alertId": "A-1205",
+    "title": "Impossible travel for finance admin",
+    "severity": "high",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.88,
+    "recommendationSummary": "Force re-auth, lock session",
+    "linkedCaseId": "PX-D034458"
+  },
+  {
+    "alertId": "A-1088",
+    "title": "Suspicious OAuth grant to unknown app",
+    "severity": "medium",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.81,
+    "recommendationSummary": "Revoke token, review consent",
+    "linkedCaseId": "PX-D034459"
+  },
+  {
+    "alertId": "A-1488",
+    "title": "MFA push fatigue — 12 denied attempts",
+    "severity": "medium",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.83,
+    "recommendationSummary": "Lock account, force password reset",
+    "linkedCaseId": "PX-D034472"
+  },
+  {
+    "alertId": "A-1233",
+    "title": "Scheduled task persistence on WKS-204",
+    "severity": "medium",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.79,
+    "recommendationSummary": "Remove task, hunt siblings",
+    "linkedCaseId": "PX-D034455"
+  },
+  {
+    "alertId": "A-1510",
+    "title": "Sensitive data copied to USB device",
+    "severity": "medium",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.77,
+    "recommendationSummary": "Collect device, DLP review",
+    "linkedCaseId": "PX-D034474"
+  },
+  {
+    "alertId": "A-1402",
+    "title": "Kerberoasting-style ticket requests",
+    "severity": "medium",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.76,
+    "recommendationSummary": "Rotate service account, monitor",
+    "linkedCaseId": "PX-D034456"
+  },
+  {
+    "alertId": "A-1388",
+    "title": "Mailbox rule forwarding to external domain",
+    "severity": "high",
+    "verdict": "TRUE_POSITIVE",
+    "confidence": 0.91,
+    "recommendationSummary": "Remove rule, revoke session",
+    "linkedCaseId": "PX-D034465"
+  }
 ]

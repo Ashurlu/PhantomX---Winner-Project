@@ -5,6 +5,8 @@ Settings default from .env but are editable at runtime via the admin page.
 """
 from __future__ import annotations
 
+import os
+import shutil
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,8 +15,21 @@ import bcrypt
 
 from .config import settings as cfg
 
-DB_PATH = Path(__file__).resolve().parent / "data" / "phantomx.db"
-AVATAR_DIR = Path(__file__).resolve().parent / "data" / "avatars"
+_LEGACY_DB = Path(__file__).resolve().parent / "data" / "phantomx.db"
+
+
+def _resolve_db_path() -> Path:
+    override = os.environ.get("PHANTOMX_DB_PATH")
+    if override:
+        return Path(override)
+    # SQLite + OneDrive sync causes "unable to open database file" on writes.
+    if os.name == "nt" and "OneDrive" in str(_LEGACY_DB):
+        return Path(os.environ.get("LOCALAPPDATA", Path.home())) / "PhantomX" / "phantomx.db"
+    return _LEGACY_DB
+
+
+DB_PATH = _resolve_db_path()
+AVATAR_DIR = DB_PATH.parent / "avatars"
 ALLOWED_AVATAR_TYPES = {
     "image/jpeg": ".jpg",
     "image/jpg": ".jpg",
@@ -43,9 +58,22 @@ SETTING_KEYS = [
 
 def _conn() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+    # Use str() for Windows paths with non-ASCII chars; timeout helps sync-folder locks.
+    conn = sqlite3.connect(str(DB_PATH), timeout=30.0)
     conn.row_factory = sqlite3.Row
+    # DELETE journal avoids -wal/-shm sidecars that break on synced folders (OneDrive).
+    conn.execute("PRAGMA journal_mode=DELETE")
     return conn
+
+
+def _migrate_legacy_db() -> None:
+    """Copy existing project DB into local app data when we moved off OneDrive."""
+    if DB_PATH.resolve() == _LEGACY_DB.resolve():
+        return
+    if DB_PATH.exists() or not _LEGACY_DB.exists():
+        return
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(_LEGACY_DB, DB_PATH)
 
 
 def hash_password(password: str) -> str:
@@ -64,6 +92,7 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def init_db() -> None:
+    _migrate_legacy_db()
     conn = _conn()
     try:
         conn.execute(
@@ -138,13 +167,20 @@ def init_db() -> None:
 
 def _seed_user(conn: sqlite3.Connection, username: str, password: str, role: str) -> None:
     row = conn.execute(
-        "SELECT 1 FROM users WHERE username = ?", (username,)
+        "SELECT password_hash FROM users WHERE username = ?", (username,)
     ).fetchone()
     if row is None:
         conn.execute(
             "INSERT INTO users (username, password_hash, role, active, created_at) "
             "VALUES (?, ?, ?, 1, ?)",
             (username, hash_password(password), role, _now()),
+        )
+        return
+    # Keep demo accounts usable if passwords were changed or hashes corrupted.
+    if username in ("admin", "analyst") and not verify_password(password, row["password_hash"]):
+        conn.execute(
+            "UPDATE users SET password_hash = ?, role = ?, active = 1 WHERE username = ?",
+            (hash_password(password), role, username),
         )
 
 
@@ -154,6 +190,13 @@ def _now() -> str:
 
 # ---------- Users ----------
 def create_user(username: str, password: str, role: str = "analyst") -> dict | None:
+    username = _normalize_username(username)
+    if not _valid_username(username):
+        raise ValueError(
+            "Username must be at least 3 characters (letters, numbers, - or _)."
+        )
+    if len(password) < 6:
+        raise ValueError("Password must be at least 6 characters.")
     conn = _conn()
     try:
         exists = conn.execute(
@@ -167,9 +210,14 @@ def create_user(username: str, password: str, role: str = "analyst") -> dict | N
             (username, hash_password(password), role, _now()),
         )
         conn.commit()
-        return {"username": username, "role": role, "active": True, "createdAt": _now()}
+    except sqlite3.Error as exc:
+        raise RuntimeError(f"Database error: {exc}") from exc
     finally:
         conn.close()
+    user = get_user(username)
+    if user is None:
+        raise RuntimeError("User was created but could not be loaded.")
+    return user
 
 
 def authenticate(username: str, password: str) -> str | None:
@@ -214,15 +262,18 @@ def list_users() -> list[dict]:
 
 
 def touch_login(username: str) -> None:
-    """Record a user's most recent successful login (real data)."""
-    conn = _conn()
+    """Record a user's most recent successful login (best-effort)."""
     try:
-        conn.execute(
-            "UPDATE users SET last_login = ? WHERE username = ?", (_now(), username)
-        )
-        conn.commit()
-    finally:
-        conn.close()
+        conn = _conn()
+        try:
+            conn.execute(
+                "UPDATE users SET last_login = ? WHERE username = ?", (_now(), username)
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        pass
 
 
 def set_role(username: str, role: str) -> dict | None:

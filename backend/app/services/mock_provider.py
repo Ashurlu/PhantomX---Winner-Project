@@ -122,6 +122,31 @@ class MockProvider:
         details = _load("ai_court_case_details.json")
         return details.get(alert_id)
 
+    # ---- Case Management Inbox ----
+    async def cases_inbox(self) -> list[dict]:
+        await _jitter()
+        return _load("cases_inbox.json")
+
+    async def cases_inbox_case(self, case_id: str) -> dict | None:
+        await _jitter()
+        for c in _load("cases_inbox.json"):
+            if c["id"] == case_id:
+                return c
+        return None
+
+    async def cases_inbox_stats(self) -> dict:
+        await _jitter()
+        cases = _load("cases_inbox.json")
+        open_n = sum(1 for c in cases if c["status"] == "open")
+        prog = sum(1 for c in cases if c["status"] == "in_progress")
+        done = sum(1 for c in cases if c["status"] == "done")
+        return {
+            "open": open_n,
+            "inProgress": prog,
+            "done": done,
+            "total": len(cases),
+        }
+
     # ---- Rules ----
     async def rules(self) -> list[dict]:
         await _jitter()
@@ -156,6 +181,8 @@ class MockProvider:
             "kql": payload.get("kql", ""),
             "proposedAt": datetime.now(timezone.utc).isoformat(),
             "rejectReason": None,
+            "reviewedBy": None,
+            "reviewedAt": None,
         }
         self._rules.append(rule)
         return rule
@@ -173,20 +200,24 @@ class MockProvider:
                 rule[key] = value
         return rule
 
-    async def approve_rule(self, rule_id: str) -> dict | None:
+    async def approve_rule(self, rule_id: str, actor: str | None = None) -> dict | None:
         rule = next((r for r in self._rules if r["id"] == rule_id), None)
         if rule is None:
             return None
         rule["status"] = "approved"
         rule["rejectReason"] = None
+        rule["reviewedBy"] = actor
+        rule["reviewedAt"] = datetime.now(timezone.utc).isoformat()
         return rule
 
-    async def reject_rule(self, rule_id: str, reason: str) -> dict | None:
+    async def reject_rule(self, rule_id: str, reason: str, actor: str | None = None) -> dict | None:
         rule = next((r for r in self._rules if r["id"] == rule_id), None)
         if rule is None:
             return None
         rule["status"] = "rejected"
         rule["rejectReason"] = reason
+        rule["reviewedBy"] = actor
+        rule["reviewedAt"] = datetime.now(timezone.utc).isoformat()
         return rule
 
     # ---- Pentest ----

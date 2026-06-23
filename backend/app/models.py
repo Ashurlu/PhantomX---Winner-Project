@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import Literal, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # ---------- Auth (11.1) ----------
@@ -226,6 +226,7 @@ class CaseSummary(BaseModel):
     verdict: Literal["TRUE_POSITIVE"]
     confidence: float
     recommendationSummary: str
+    linkedCaseId: Optional[str] = None
 
 
 class Evidence(BaseModel):
@@ -260,6 +261,54 @@ class CaseDetail(BaseModel):
     recommendation: Recommendation
 
 
+# ---------- Case Management Inbox ----------
+CaseStatus = Literal["open", "in_progress", "done"]
+
+
+class CaseAssignee(BaseModel):
+    initials: str
+    name: str
+
+
+class CaseHistoryEvent(BaseModel):
+    id: str
+    type: Literal["created", "assigned", "status_change", "note"]
+    actor: str
+    detail: str
+    timestamp: str
+
+
+class InboxCaseSummary(BaseModel):
+    id: str
+    title: str
+    severity: Severity
+    status: CaseStatus
+    tags: list[str]
+    assignee: Optional[CaseAssignee] = None
+    createdAt: str
+    dueAt: str
+    slaHours: int
+    elapsedHours: int
+    tasksDone: int
+    tasksTotal: int
+    flags: int = 0
+    attachments: int = 0
+    aiSummary: str
+    sourceAlertId: Optional[str] = None
+    linkedRuleId: Optional[str] = None
+
+
+class InboxCaseDetail(InboxCaseSummary):
+    history: list[CaseHistoryEvent]
+
+
+class InboxStats(BaseModel):
+    open: int
+    inProgress: int
+    done: int
+    total: int
+
+
 # ---------- Recommended Rules (11.4) ----------
 RuleStatus = Literal["pending", "approved", "rejected"]
 # Which n8n AI node proposed the rule: incident-response or Active Directory.
@@ -271,9 +320,12 @@ class RuleSummary(BaseModel):
     title: str
     severity: Severity
     sourceAlertId: str
+    linkedCaseId: Optional[str] = None
     status: RuleStatus
     category: RuleCategory
     proposedAt: str
+    reviewedBy: Optional[str] = None
+    reviewedAt: Optional[str] = None
 
 
 class RuleDetail(BaseModel):
@@ -282,12 +334,15 @@ class RuleDetail(BaseModel):
     description: str
     severity: Severity
     sourceAlertId: str
+    linkedCaseId: Optional[str] = None
     status: RuleStatus
     category: RuleCategory
     sigma: str  # Sigma detection rule (YAML)
     kql: str  # secondary translated query
     rejectReason: Optional[str] = None
     proposedAt: str
+    reviewedBy: Optional[str] = None
+    reviewedAt: Optional[str] = None
 
 
 class RuleUpdate(BaseModel):
@@ -483,3 +538,27 @@ class CoverageEntry(BaseModel):
     score: int
     sigmaRule: Optional[str] = None
     comment: str
+
+
+# ---------- SOC Chat ----------
+class ChatHistoryMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=4000)
+    history: list[ChatHistoryMessage] = []
+
+
+class ChatCitation(BaseModel):
+    kind: Literal["case", "alert", "rule"]
+    id: str
+    title: str
+    path: str
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    source: Literal["local", "openrouter", "openai", "anthropic"]
+    citations: list[ChatCitation] = []

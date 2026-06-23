@@ -49,7 +49,7 @@ async def edit_rule(
 
 @router.post("/{rule_id}/approve", response_model=RuleDetail)
 async def approve_rule(rule_id: str, user: dict = Depends(require_role("admin"))):
-    rule = await get_provider().approve_rule(rule_id)
+    rule = await get_provider().approve_rule(rule_id, actor=user["username"])
     if rule is None:
         raise HTTPException(status_code=404, detail="Rule not found")
     db.add_audit(user["username"], "rule.approve", rule_id)
@@ -62,7 +62,7 @@ async def reject_rule(
 ):
     if not body.reason or not body.reason.strip():
         raise HTTPException(status_code=422, detail="Reject reason is required")
-    rule = await get_provider().reject_rule(rule_id, body.reason.strip())
+    rule = await get_provider().reject_rule(rule_id, body.reason.strip(), actor=user["username"])
     if rule is None:
         raise HTTPException(status_code=404, detail="Rule not found")
     db.add_audit(user["username"], "rule.reject", f"{rule_id}: {body.reason.strip()[:60]}")

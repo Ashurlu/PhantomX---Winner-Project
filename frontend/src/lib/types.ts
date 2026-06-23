@@ -155,6 +155,7 @@ export interface CaseSummary {
   verdict: "TRUE_POSITIVE";
   confidence: number;
   recommendationSummary: string;
+  linkedCaseId?: string | null;
 }
 
 export interface CaseDetail {
@@ -171,6 +172,52 @@ export interface CaseDetail {
   recommendation: { severity: Severity; actionItems: string[]; playbook: string };
 }
 
+export type CaseStatus = "open" | "in_progress" | "done";
+
+export interface CaseAssignee {
+  initials: string;
+  name: string;
+}
+
+export interface CaseHistoryEvent {
+  id: string;
+  type: "created" | "assigned" | "status_change" | "note";
+  actor: string;
+  detail: string;
+  timestamp: string;
+}
+
+export interface InboxCase {
+  id: string;
+  title: string;
+  severity: Severity;
+  status: CaseStatus;
+  tags: string[];
+  assignee: CaseAssignee | null;
+  createdAt: string;
+  dueAt: string;
+  slaHours: number;
+  elapsedHours: number;
+  tasksDone: number;
+  tasksTotal: number;
+  flags: number;
+  attachments: number;
+  aiSummary: string;
+  sourceAlertId?: string | null;
+  linkedRuleId?: string | null;
+}
+
+export interface InboxCaseDetail extends InboxCase {
+  history: CaseHistoryEvent[];
+}
+
+export interface InboxStats {
+  open: number;
+  inProgress: number;
+  done: number;
+  total: number;
+}
+
 export type RuleStatus = "pending" | "approved" | "rejected";
 export type RuleCategory = "incident-response" | "ad";
 
@@ -179,9 +226,12 @@ export interface RuleSummary {
   title: string;
   severity: Severity;
   sourceAlertId: string;
+  linkedCaseId?: string | null;
   status: RuleStatus;
   category: RuleCategory;
   proposedAt: string;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
 }
 
 export interface RuleDetail extends RuleSummary {
@@ -349,4 +399,25 @@ export interface CoverageEntry {
   score: number;
   sigmaRule: string | null;
   comment: string;
+}
+
+// ---------- SOC Chat ----------
+export interface ChatCitation {
+  kind: "case" | "alert" | "rule";
+  id: string;
+  title: string;
+  path: string;
+}
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  source?: "local" | "openrouter" | "openai" | "anthropic";
+  citations?: ChatCitation[];
+}
+
+export interface ChatResponse {
+  reply: string;
+  source: "local" | "openrouter" | "openai" | "anthropic";
+  citations: ChatCitation[];
 }

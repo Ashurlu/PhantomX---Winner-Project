@@ -28,6 +28,12 @@ export function Signup() {
       toast.error("Username too short", { description: "At least 3 characters." });
       return;
     }
+    if (!/^[a-zA-Z0-9_-]{3,32}$/.test(username.trim())) {
+      toast.error("Invalid username", {
+        description: "Use letters, numbers, hyphen, or underscore only.",
+      });
+      return;
+    }
     if (password.length < 6) {
       toast.error("Password too short", { description: "At least 6 characters." });
       return;
@@ -40,9 +46,6 @@ export function Signup() {
     try {
       const res = await signupRequest(username.trim(), password);
       setAuth(res.token, res.role, res.username, resolveAvatarUrl(res.avatarUrl));
-      toast.success(`Account created — welcome, ${res.username}`, {
-        description: "Signed in as analyst. An admin can grant you more access.",
-      });
       navigate("/overview", { replace: true });
     } catch (err) {
       const msg =

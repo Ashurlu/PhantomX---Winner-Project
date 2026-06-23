@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import db
 from .config import settings
-from .routers import admin, ai_court, attack, auth, detection, overview, pentest, profile, rules
+from .routers import admin, ai_court, attack, auth, cases, chat, detection, overview, pentest, profile, rules
 
 app = FastAPI(title=f"{settings.APP_NAME} BFF", version="1.0.0")
 
@@ -15,11 +15,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-def _startup() -> None:
-    db.init_db()
 
 
 db.AVATAR_DIR.mkdir(parents=True, exist_ok=True)
@@ -41,6 +36,8 @@ app.include_router(profile.router)
 app.include_router(overview.router)
 app.include_router(detection.router)  # Alert intelligence aggregates
 app.include_router(ai_court.router)
+app.include_router(cases.router)
+app.include_router(chat.router)
 app.include_router(rules.router)
 app.include_router(pentest.router)
 app.include_router(admin.router)

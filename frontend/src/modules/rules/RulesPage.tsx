@@ -6,6 +6,7 @@ import {
   Network,
   ShieldAlert,
   ShieldHalf,
+  UserCheck,
   XCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -189,6 +190,7 @@ function CategoryPanel({
                   <TableHead>Severity</TableHead>
                   <TableHead>Source Alert</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Reviewed by</TableHead>
                   <TableHead>Proposed</TableHead>
                 </TableRow>
               </TableHeader>
@@ -232,6 +234,9 @@ function RuleRow({ r, onOpen }: { r: RuleSummary; onOpen: () => void }) {
           {meta.label}
         </span>
       </TableCell>
+      <TableCell>
+        <ReviewedByCell rule={r} />
+      </TableCell>
       <TableCell className="text-xs text-muted-foreground">
         {new Date(r.proposedAt).toLocaleDateString(undefined, {
           month: "short",
@@ -241,6 +246,32 @@ function RuleRow({ r, onOpen }: { r: RuleSummary; onOpen: () => void }) {
         })}
       </TableCell>
     </TableRow>
+  );
+}
+
+function ReviewedByCell({ rule }: { rule: RuleSummary }) {
+  if (rule.status === "pending" || !rule.reviewedBy) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  const verb = rule.status === "approved" ? "Approved" : "Rejected";
+  const color = rule.status === "approved" ? "text-severity-resolved" : "text-destructive";
+  return (
+    <span className={`flex flex-col gap-0.5 text-xs ${color}`}>
+      <span className="flex items-center gap-1 font-semibold">
+        <UserCheck className="h-3 w-3 shrink-0" />
+        {verb} by {rule.reviewedBy}
+      </span>
+      {rule.reviewedAt && (
+        <span className="text-[10px] text-muted-foreground">
+          {new Date(rule.reviewedAt).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+      )}
+    </span>
   );
 }
 

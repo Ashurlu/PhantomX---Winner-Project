@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
   Bot,
   Database,
+  FolderKanban,
   Gavel,
   Hand,
   Radar,
@@ -187,7 +188,7 @@ export function OverviewPage() {
 
           {/* Handling split + Open by severity + Sources */}
           <div className="grid gap-6 lg:grid-cols-3">
-            <Card className="accent-top">
+            <Card className="accent-top glass-hover">
               <CardHeader>
                 <CardTitle>Incident Handling</CardTitle>
               </CardHeader>
@@ -209,7 +210,7 @@ export function OverviewPage() {
               </CardContent>
             </Card>
 
-            <Card className="accent-top">
+            <Card className="accent-top glass-hover">
               <CardHeader>
                 <CardTitle>Open by Severity</CardTitle>
               </CardHeader>
@@ -238,7 +239,7 @@ export function OverviewPage() {
               </CardContent>
             </Card>
 
-            <Card className="accent-top">
+            <Card className="accent-top glass-hover">
               <CardHeader>
                 <CardTitle>Data Sources</CardTitle>
               </CardHeader>
@@ -294,10 +295,18 @@ export function OverviewPage() {
               onClick: () => navigate("/detection"),
             },
             {
+              icon: FolderKanban,
+              title: "Cases",
+              description: "Incident inbox & Kanban board",
+              meta: `${data?.incidentsOpen ?? 0} open`,
+              accent: "#6366F1",
+              onClick: () => navigate("/cases"),
+            },
+            {
               icon: Gavel,
               title: "AI Court",
               description: "n8n verdicts on true positives",
-              meta: `${data?.incidents ?? ""}`,
+              meta: "14 TP",
               accent: "#8B5CF6",
               onClick: () => navigate("/ai-court"),
             },

@@ -27,13 +27,15 @@ export function Login() {
     try {
       const res = await loginRequest(username.trim(), password);
       setAuth(res.token, res.role, res.username, resolveAvatarUrl(res.avatarUrl));
-      toast.success(`Welcome back, ${res.username}`, {
-        description: `Signed in as ${res.role}`,
-      });
       navigate("/overview", { replace: true });
     } catch (err) {
-      const msg =
-        err instanceof ApiError ? err.message : "Login failed. Try again.";
+      let msg = "Could not reach the server. Is the backend running on port 8000?";
+      if (err instanceof ApiError) {
+        msg =
+          err.status === 401
+            ? "Invalid username or password."
+            : err.message || `Request failed (${err.status})`;
+      }
       toast.error("Authentication failed", { description: msg });
     } finally {
       setLoading(false);

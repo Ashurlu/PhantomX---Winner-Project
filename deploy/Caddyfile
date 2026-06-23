@@ -1,0 +1,15 @@
+# Used with: docker compose -f docker-compose.prod.yml --profile https up -d
+# Requires DOMAIN and ACME_EMAIL in .env.prod, and DNS A record → droplet IP.
+
+{$DOMAIN} {
+	email {$ACME_EMAIL}
+	encode gzip
+
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+
+	handle {
+		reverse_proxy frontend:80
+	}
+}
