@@ -348,6 +348,7 @@ export interface Technique {
 export interface TestSelection {
   technique_id: string;
   test_index: number;
+  arg_overrides?: Record<string, string>;
 }
 
 export type WinrmTransport =
@@ -475,7 +476,15 @@ export interface ChatAction {
 }
 
 export type SocChatMode = "auto" | "search" | "analyze" | "hunt" | "brief";
-export type SocChatScope = "all" | "cases" | "alerts" | "rules" | "detection";
+export type SocChatScope =
+  | "all"
+  | "cases"
+  | "alerts"
+  | "rules"
+  | "detection"
+  | "pentest"
+  | "cramm"
+  | "pipeline";
 
 export interface ChatMessage {
   role: "user" | "assistant";

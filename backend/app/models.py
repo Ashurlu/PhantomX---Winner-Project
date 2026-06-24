@@ -478,6 +478,7 @@ class Technique(BaseModel):
 class TestSelectionInput(BaseModel):
     technique_id: str
     test_index: int = 0
+    arg_overrides: dict[str, str] = {}
 
 
 class PentestTarget(BaseModel):
@@ -628,7 +629,7 @@ class ChatHistoryMessage(BaseModel):
 
 
 ChatMode = Literal["auto", "search", "analyze", "hunt", "brief"]
-ChatScope = Literal["all", "cases", "alerts", "rules", "detection"]
+ChatScope = Literal["all", "cases", "alerts", "rules", "detection", "pentest", "cramm", "pipeline"]
 
 
 class ChatRequest(BaseModel):

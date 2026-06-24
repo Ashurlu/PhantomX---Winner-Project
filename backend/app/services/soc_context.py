@@ -9,7 +9,7 @@ from typing import Literal
 
 MOCK_DIR = Path(__file__).resolve().parent.parent / "mock"
 
-ChatScope = Literal["all", "cases", "alerts", "rules", "detection"]
+ChatScope = Literal["all", "cases", "alerts", "rules", "detection", "pentest", "cramm", "pipeline"]
 ChatMode = Literal["auto", "search", "analyze", "hunt", "brief"]
 
 STOPWORDS = {
@@ -49,6 +49,10 @@ def parse_slash_command(message: str) -> tuple[str, ChatScope, ChatMode]:
         "/brief": ("all", "brief", rest or "SOC status"),
         "/status": ("all", "brief", "platform status"),
         "/help": ("all", "brief", "help"),
+        "/pentest": ("pentest", "analyze", rest or "AD assessment techniques"),
+        "/cramm": ("cramm", "analyze", rest or "critical risks"),
+        "/pipeline": ("pipeline", "analyze", rest or "investigation pipeline funnel"),
+        "/web": ("all", "analyze", rest or "web security assessment"),
     }
     if cmd in mapping:
         scope, mode, default_q = mapping[cmd]
@@ -60,8 +64,10 @@ def format_status_reply(time_range: str | None = None) -> str:
     overview = _load("overview.json")
     court = _load("ai_court_stats.json")
     detection = _load("detection.json")
-    cases = _load("cases_inbox.json")
+    cramm = _load("cramm.json")
+    cases = _cases_list()
     open_cases = sum(1 for c in cases if c["status"] in ("open", "in_progress"))
+    pipeline = _pipeline_summary()
     window = time_range or "24h"
     return (
         f"**SOC status** ({window})\n\n"
@@ -69,32 +75,70 @@ def format_status_reply(time_range: str | None = None) -> str:
         f"- **{overview['incidents']}** incidents (**{overview['incidentsOpen']}** open, "
         f"**{overview['incidentsResolved']}** resolved)\n"
         f"- **{overview['falsePositivesAutoClosed']:,}** false positives auto-closed\n"
-        f"- **{court['truePositivesShown']}** true positives in AI Court · **{open_cases}** cases in inbox\n"
-        f"- Automation: **{overview['handling']['automated']}%** automated handling\n\n"
-        "Try `/cases critical`, `/hunt powershell`, or ask in plain language."
+        f"- **{court['truePositivesShown']}** AI Court true positives · **{open_cases}** cases in inbox\n"
+        f"- CRAMM: **{cramm['stats']['criticalCount']}** critical / **{cramm['stats']['totalRisks']}** risks tracked\n"
+        f"- Automation: **{overview['handling']['automated']}%** automated handling\n"
+        f"- Modules: Overview, Detection, Cases, AI Court, Rules, CRAMM, Pentest (ProtonRed), Web Assessment, Threat Hunt\n"
+        f"{pipeline}\n\n"
+        "Try `/cases critical`, `/pentest AD`, `/cramm`, `/pipeline`, or ask in plain language."
     )
 
 
 def format_help_reply() -> str:
     return (
-        "**SOC Assistant commands**\n\n"
+        "**PhantomX SOC Assistant**\n\n"
+        "Connected modules: Overview, Detection, Cases, AI Court, Rules, CRAMM risk matrix, "
+        "AGI Pentest (ProtonRed / AD assessment), Web Security Assessment, Threat Hunt, Investigation Pipeline.\n\n"
         "Slash commands:\n"
         "- `/status` — platform snapshot\n"
-        "- `/cases [query]` — search cases\n"
-        "- `/alerts [query]` — search AI Court alerts\n"
+        "- `/cases [query]` — case inbox search\n"
+        "- `/alerts [query]` — AI Court alerts\n"
         "- `/rules [query]` — detection rules\n"
-        "- `/detection` — alert intelligence summary\n"
+        "- `/detection` — alert intelligence\n"
         "- `/hunt [IOC]` — threat hunt plan\n"
-        "- `/analyze [topic]` — deeper analysis\n"
-        "- `/brief [topic]` — short answer only\n\n"
-        "You can also ask naturally: severity filters, time windows (\"2 weeks ago\"), "
-        "hostnames, and case IDs (e.g. PX-C034463)."
+        "- `/pentest [topic]` — MITRE / AD emulation guidance\n"
+        "- `/cramm [technique]` — risk & CRAMM scores\n"
+        "- `/pipeline` — investigation Sankey funnel\n"
+        "- `/analyze` · `/brief` · `/help`\n\n"
+        "Use **scope chips** to narrow data. Drag the panel corner or pick **S/M/L/XL** to resize."
     )
 
 
 def _load(name: str):
     with open(MOCK_DIR / name, encoding="utf-8") as f:
         return json.load(f)
+
+
+def _cases_list() -> list[dict]:
+    try:
+        from .cases_store import list_inbox
+
+        return list_inbox()
+    except Exception:
+        return _load("cases_inbox.json")
+
+
+def _pipeline_summary() -> str:
+    try:
+        from .investigation_pipeline import get_pipeline_config
+
+        cfg = get_pipeline_config()
+        nodes = ", ".join(f"{n.label}={n.value}" for n in cfg.nodes[:6])
+        m = cfg.metrics
+        extra = f" · {m.totalAlerts} alerts in funnel" if m and m.totalAlerts else ""
+        return f"- Pipeline: {nodes}{extra}"
+    except Exception:
+        return ""
+
+
+def _pentest_engine_line() -> str:
+    try:
+        from .. import db
+
+        url = (db.get_settings().get("pentest_base_url") or "").strip()
+        return f"Pentest engine: {'configured at ' + url if url else 'not configured (Admin → API Keys)'}"
+    except Exception:
+        return "Pentest engine: unknown"
 
 
 def _parse_ts(iso: str) -> datetime:
@@ -124,7 +168,7 @@ def _collect_documents() -> list[dict]:
     docs: list[dict] = []
     alert_titles = _alert_titles_by_id()
 
-    for c in _load("cases_inbox.json"):
+    for c in _cases_list():
         alert_id = c.get("sourceAlertId", "")
         alert_title = alert_titles.get(alert_id, "")
         docs.append(
@@ -222,6 +266,73 @@ def _collect_documents() -> list[dict]:
             }
         )
 
+    cramm = _load("cramm.json")
+    for item in cramm.get("critical", []) + cramm.get("high", []):
+        docs.append(
+            {
+                "kind": "cramm",
+                "id": item["techniqueId"],
+                "title": item["title"],
+                "path": f"/cramm/{item['techniqueId']}",
+                "severity": item.get("severity", ""),
+                "status": f"score {item.get('riskScore', '')}",
+                "createdAt": "",
+                "text": _expand_text(
+                    item["techniqueId"],
+                    item["title"],
+                    item.get("description", ""),
+                    " ".join(item.get("tags", [])),
+                    "cramm",
+                    "risk",
+                ),
+                "summary": item.get("description", item["title"])[:240],
+            }
+        )
+
+    for t in _load("pentest_techniques.json"):
+        docs.append(
+            {
+                "kind": "pentest",
+                "id": t["id"],
+                "title": t["name"],
+                "path": "/pentest",
+                "severity": "",
+                "status": t.get("status", "available"),
+                "createdAt": "",
+                "text": _expand_text(
+                    t["id"],
+                    t["name"],
+                    t.get("tactic", ""),
+                    "pentest",
+                    "atomic",
+                    "ad" if t.get("adBadge") else "",
+                    "emulation",
+                ),
+                "summary": f"{t['name']} ({t['tactic']}) — {t.get('testCount', 0)} tests",
+            }
+        )
+
+    try:
+        from .investigation_pipeline import get_pipeline_config
+
+        cfg = get_pipeline_config()
+        for node in cfg.nodes:
+            docs.append(
+                {
+                    "kind": "pipeline",
+                    "id": node.id,
+                    "title": node.label,
+                    "path": "/overview",
+                    "severity": "",
+                    "status": "node",
+                    "createdAt": "",
+                    "text": _expand_text(node.id, node.label, "pipeline", "sankey", "investigation"),
+                    "summary": f"{node.label}: {node.value} items in investigation funnel",
+                }
+            )
+    except Exception:
+        pass
+
     return docs
 
 
@@ -255,6 +366,12 @@ def search_soc(
         docs = [d for d in docs if d["kind"] == "rule"]
     elif scope == "detection":
         docs = [d for d in docs if d["kind"] == "detection"]
+    elif scope == "pentest":
+        docs = [d for d in docs if d["kind"] == "pentest"]
+    elif scope == "cramm":
+        docs = [d for d in docs if d["kind"] == "cramm"]
+    elif scope == "pipeline":
+        docs = [d for d in docs if d["kind"] == "pipeline"]
 
     q_lower = query.lower()
     if "critical" in q_lower:
@@ -294,13 +411,23 @@ def search_soc(
         if score > 0:
             scored.append((score, doc))
 
-    scored.sort(key=lambda x: (-x[0], {"case": 0, "alert": 1, "rule": 2, "detection": 3}.get(x[1]["kind"], 9), x[1]["id"]))
+    scored.sort(
+        key=lambda x: (
+            -x[0],
+            {"case": 0, "alert": 1, "rule": 2, "cramm": 3, "pentest": 4, "pipeline": 5, "detection": 6}.get(
+                x[1]["kind"], 9
+            ),
+            x[1]["id"],
+        )
+    )
     return [d for _, d in scored[:limit]]
 
 
 def citation_kind(doc: dict) -> str:
     k = doc["kind"]
-    if k == "detection":
+    if k in ("detection", "pipeline"):
+        return "page"
+    if k in ("pentest", "cramm"):
         return "page"
     return k
 
@@ -327,6 +454,9 @@ def build_actions(hits: list[dict], context_path: str | None) -> list[dict]:
             "/ai-court": ("AI Court", "/ai-court"),
             "/rules": ("Rules", "/rules"),
             "/overview": ("Overview", "/overview"),
+            "/pentest": ("AGI Pentest", "/pentest"),
+            "/cramm": ("CRAMM Matrix", "/cramm"),
+            "/admin": ("Admin", "/admin"),
         }
         for prefix, (label, path) in page_hints.items():
             if context_path.startswith(prefix):
@@ -335,24 +465,61 @@ def build_actions(hits: list[dict], context_path: str | None) -> list[dict]:
     return actions[:6]
 
 
-def build_context_block(max_chars: int = 12000) -> str:
-    """Compact overview for LLM system prompt."""
+def build_context_block(max_chars: int = 16000) -> str:
+    """Compact overview for LLM system prompt — all platform modules."""
     overview = _load("overview.json")
-    cases = _load("cases_inbox.json")
+    cases = _cases_list()
+    detection = _load("detection.json")
+    rules = _load("rules.json")
+    cramm = _load("cramm.json")
+    court_stats = _load("ai_court_stats.json")
+
     lines = [
-        f"SOC snapshot: {overview['alerts']} alerts/24h, {overview['incidents']} incidents, "
-        f"{overview['incidentsOpen']} open, {overview['incidentsResolved']} resolved.",
-        f"AI Court true positives: {_load('ai_court_stats.json')['truePositivesShown']}.",
+        "PLATFORM MODULES: Overview KPIs, Detection analytics, Case Inbox, AI Court verdicts, "
+        "Detection Rules, CRAMM risk matrix, AGI Pentest (ProtonRed AD assessment), "
+        "Autonomous Web Security Assessment, Threat Hunt panel, Investigation Pipeline Sankey.",
         "",
-        "Cases:",
+        f"SOC snapshot: {overview['alerts']} alerts/24h, {overview['incidents']} incidents, "
+        f"{overview['incidentsOpen']} open, {overview['incidentsResolved']} resolved, "
+        f"{overview['falsePositivesAutoClosed']} FP auto-closed.",
+        f"AI Court: {court_stats['truePositivesShown']} true positives shown.",
+        f"Detection: {detection['totalAlerts']} total alerts across "
+        f"{len(detection.get('categories', []))} categories.",
+        f"Rules: {len(rules)} rules ({sum(1 for r in rules if r.get('status') == 'pending')} pending).",
+        f"CRAMM: {cramm['stats']['totalRisks']} risks, {cramm['stats']['criticalCount']} critical, "
+        f"avg health {cramm['stats']['avgHealthScore']}. Insight: {cramm['insight']['message'][:200]}",
+        _pentest_engine_line(),
+        _pipeline_summary(),
+        "",
+        "Top CRAMM critical:",
     ]
+    for item in cramm.get("critical", [])[:5]:
+        lines.append(
+            f"- {item['techniqueId']}: {item['title']} score {item.get('riskScore')} — "
+            f"{item.get('description', '')[:120]}"
+        )
+
+    lines.append("")
+    lines.append("AD / Pentest techniques (sample):")
+    for t in _load("pentest_techniques.json"):
+        if t.get("adBadge"):
+            lines.append(f"- {t['id']}: {t['name']} ({t['tactic']})")
+
+    lines.append("")
+    lines.append("Cases:")
     for c in cases:
         assignee = (c.get("assignee") or {}).get("name") or "Unassigned"
         lines.append(
             f"- {c['id']}: {c['title']} [{c['severity']}/{c['status']}] "
             f"alert {c.get('sourceAlertId')} rule {c.get('linkedRuleId')} assignee {assignee}. "
-            f"{c.get('aiSummary', '')[:180]}"
+            f"{c.get('aiSummary', '')[:160]}"
         )
+
+    lines.append("")
+    lines.append("Detection categories:")
+    for cat in detection.get("categories", [])[:6]:
+        lines.append(f"- {cat['name']}: {cat.get('value', 0):,} alerts")
+
     text = "\n".join(lines)
     return text[:max_chars]
 
@@ -383,6 +550,7 @@ def format_local_reply(query: str, hits: list[dict]) -> str:
 
     parts.append("")
     parts.append(
-        "_Commands: `/status` · `/cases` · `/alerts` · `/hunt` · `/help` — or add an OpenRouter key in **Admin → API Keys**._"
+        "_Commands: `/status` · `/cases` · `/alerts` · `/pentest` · `/cramm` · `/pipeline` · `/hunt` · `/help` — "
+        "or add an OpenRouter key in **Admin → API Keys**._"
     )
     return "\n".join(parts)

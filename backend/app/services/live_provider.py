@@ -283,7 +283,11 @@ class LiveProvider:
             if idx is None:
                 idx = _PREFERRED_INDEX.get(tech, 0)
             out.append(
-                {"technique_id": tech, "test_index": int(idx), "arg_overrides": {}}
+                {
+                    "technique_id": tech,
+                    "test_index": int(idx),
+                    "arg_overrides": s.get("arg_overrides") or {},
+                }
             )
         return out
 

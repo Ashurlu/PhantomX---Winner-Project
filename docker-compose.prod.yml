@@ -3,6 +3,23 @@
 #   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 
 services:
+  pentest-engine:
+    build:
+      context: ./proton-red
+      dockerfile: Dockerfile
+    container_name: sentrix-pentest-engine
+    expose:
+      - "8000"
+    volumes:
+      - proton_red_results:/app/results
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
+      interval: 20s
+      timeout: 8s
+      retries: 4
+      start_period: 90s
+
   backend:
     build:
       context: .
@@ -16,11 +33,15 @@ services:
       CORS_ORIGINS: ${PUBLIC_URL:-http://localhost}
       PHANTOMX_DB_PATH: /app/data/phantomx.db
       AI_PROVIDER: ${AI_PROVIDER:-local_mock}
+      PENTEST_BASE_URL: http://pentest-engine:8000
     volumes:
       - sentrix_data:/app/data
     expose:
       - "8000"
     restart: unless-stopped
+    depends_on:
+      pentest-engine:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=3)"]
       interval: 15s
@@ -64,5 +85,6 @@ services:
 
 volumes:
   sentrix_data:
+  proton_red_results:
   caddy_data:
   caddy_config:

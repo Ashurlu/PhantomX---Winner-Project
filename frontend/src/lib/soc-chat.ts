@@ -1,9 +1,18 @@
 import type { ChatMessage } from "@/lib/types";
 
 export type SocChatMode = "auto" | "search" | "analyze" | "hunt" | "brief";
-export type SocChatScope = "all" | "cases" | "alerts" | "rules" | "detection";
+export type SocChatScope =
+  | "all"
+  | "cases"
+  | "alerts"
+  | "rules"
+  | "detection"
+  | "pentest"
+  | "cramm"
+  | "pipeline";
 
 export const SOC_CHAT_STORAGE_KEY = "phantomx-soc-chat-v2";
+export const SOC_CHAT_LAYOUT_KEY = "phantomx-soc-chat-layout-v1";
 
 export const SOC_MODES: { id: SocChatMode; label: string; hint: string }[] = [
   { id: "auto", label: "Auto", hint: "Best fit for your question" },
@@ -14,28 +23,94 @@ export const SOC_MODES: { id: SocChatMode; label: string; hint: string }[] = [
 ];
 
 export const SOC_SCOPES: { id: SocChatScope; label: string }[] = [
-  { id: "all", label: "All data" },
+  { id: "all", label: "All" },
   { id: "cases", label: "Cases" },
   { id: "alerts", label: "Alerts" },
   { id: "rules", label: "Rules" },
   { id: "detection", label: "Detection" },
+  { id: "pentest", label: "Pentest" },
+  { id: "cramm", label: "CRAMM" },
+  { id: "pipeline", label: "Pipeline" },
 ];
 
+export type SocChatSizePreset = "sm" | "md" | "lg" | "xl";
+
+export const SOC_CHAT_SIZE_PRESETS: Record<
+  SocChatSizePreset,
+  { label: string; width: number; height: number }
+> = {
+  sm: { label: "S", width: 360, height: 420 },
+  md: { label: "M", width: 440, height: 540 },
+  lg: { label: "L", width: 560, height: 660 },
+  xl: { label: "XL", width: 720, height: 820 },
+};
+
+export const SOC_CHAT_SIZE_LIMITS = {
+  minWidth: 300,
+  maxWidth: 920,
+  minHeight: 320,
+  maxHeight: 900,
+};
+
+export interface SocChatLayout {
+  width: number;
+  height: number;
+  preset: SocChatSizePreset | "custom";
+}
+
+export function defaultChatLayout(): SocChatLayout {
+  const md = SOC_CHAT_SIZE_PRESETS.md;
+  return { width: md.width, height: md.height, preset: "md" };
+}
+
+export function loadChatLayout(): SocChatLayout {
+  try {
+    const raw = localStorage.getItem(SOC_CHAT_LAYOUT_KEY);
+    if (!raw) return defaultChatLayout();
+    const parsed = JSON.parse(raw) as SocChatLayout;
+    const { minWidth, maxWidth, minHeight, maxHeight } = SOC_CHAT_SIZE_LIMITS;
+    return {
+      width: Math.min(maxWidth, Math.max(minWidth, parsed.width ?? defaultChatLayout().width)),
+      height: Math.min(maxHeight, Math.max(minHeight, parsed.height ?? defaultChatLayout().height)),
+      preset: parsed.preset ?? "custom",
+    };
+  } catch {
+    return defaultChatLayout();
+  }
+}
+
+export function saveChatLayout(layout: SocChatLayout) {
+  try {
+    localStorage.setItem(SOC_CHAT_LAYOUT_KEY, JSON.stringify(layout));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clampChatSize(width: number, height: number) {
+  const { minWidth, maxWidth, minHeight, maxHeight } = SOC_CHAT_SIZE_LIMITS;
+  return {
+    width: Math.min(maxWidth, Math.max(minWidth, Math.round(width))),
+    height: Math.min(maxHeight, Math.max(minHeight, Math.round(height))),
+  };
+}
+
 const PAGE_SUGGESTIONS: Record<string, string[]> = {
-  "/overview": ["/status", "Summarize open incidents", "What was auto-closed today?"],
-  "/detection": ["/detection", "Top alert categories", "Which source has the most alerts?"],
-  "/cases": ["/cases critical", "Show unassigned cases", "Cases from last 2 weeks"],
+  "/overview": ["/status", "/pipeline", "Summarize open incidents"],
+  "/detection": ["/detection", "/hunt lateral movement", "Top alert categories"],
+  "/cases": ["/cases critical", "Show unassigned cases", "/analyze case trends"],
   "/ai-court": ["/alerts ransomware", "True positive summary", "Highest confidence verdicts"],
-  "/rules": ["/rules pending", "Rules linked to open cases", "Critical severity rules"],
-  "/pentest": ["/hunt exposed endpoints", "MITRE techniques we should test"],
-  "/cramm": ["/analyze risk posture", "Highest CRAMM scores"],
+  "/rules": ["/rules pending", "Rules linked to open cases", "/detection"],
+  "/pentest": ["/pentest AD", "/hunt kerberoasting", "Which TTPs to run first?"],
+  "/cramm": ["/cramm critical", "/analyze risk posture", "Golden ticket mitigation"],
+  "/admin": ["/status", "Platform modules overview", "/pipeline"],
 };
 
 const DEFAULT_SUGGESTIONS = [
   "/status",
   "/help",
-  "Tell me about the ransomware attack on the finance workstation",
-  "What happened on HR-DC01 with PowerShell?",
+  "Ransomware on finance workstation",
+  "HR-DC01 PowerShell activity",
 ];
 
 export function suggestionsForPath(pathname: string): string[] {
@@ -49,8 +124,9 @@ export function suggestionsForPath(pathname: string): string[] {
 const WELCOME: ChatMessage = {
   role: "assistant",
   content:
-    "I'm your SOC copilot. Ask in plain language or use **slash commands**: `/status`, `/cases`, `/alerts`, `/hunt`, `/help`. " +
-    "Switch **mode** and **scope** below for more control.",
+    "**PhantomX SOC copilot** — connected to cases, alerts, rules, detection, CRAMM, pentest, and investigation pipeline.\n\n" +
+    "Slash: `/status` `/cases` `/alerts` `/rules` `/detection` `/hunt` `/pentest` `/cramm` `/pipeline` `/help`\n" +
+    "Drag the **top-left corner** to resize · use **S/M/L/XL** presets in the header.",
   source: "local",
 };
 

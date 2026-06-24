@@ -173,6 +173,8 @@ async def chat(
             "actions": [
                 {"label": "Open Detection", "path": "/detection", "kind": "navigate"},
                 {"label": "Open Cases", "path": "/cases", "kind": "navigate"},
+                {"label": "AGI Pentest", "path": "/pentest", "kind": "navigate"},
+                {"label": "CRAMM Matrix", "path": "/cramm", "kind": "navigate"},
             ],
             "mode": "brief",
         }
@@ -230,8 +232,12 @@ async def chat(
     system = (
         "You are PhantomX, an expert SOC analyst assistant for the SENTRIX platform. "
         f"Response mode: {effective_mode}. {mode_line}\n"
+        "You have access to data from ALL modules: Overview, Detection, Cases, AI Court, Rules, "
+        "CRAMM risk matrix, AGI Pentest (ProtonRed / MITRE emulation), Web Security Assessment, "
+        "Threat Hunt, and Investigation Pipeline Sankey.\n"
         "Answer using ONLY the SOC context and retrieved items below. "
-        "Mention case/alert/rule IDs, severity, and status when relevant. "
+        "Mention case/alert/rule/technique IDs, severity, and status when relevant. "
+        "For pentest questions, reference MITRE technique IDs. For risk questions, cite CRAMM scores. "
         "If data is missing, say so — do not invent incidents.\n"
         f"{page_line}\n{range_line}\n\n"
         f"=== SOC CONTEXT ===\n{context}\n\n"

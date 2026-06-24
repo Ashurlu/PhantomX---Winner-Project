@@ -12,4 +12,12 @@ def get_provider():
         source = db.get_data_source()
     except Exception:
         source = "mock"
-    return live_provider if source == "live" else mock_provider
+    if source == "live":
+        return live_provider
+    # Use live pentest engine when URL is configured, even in mock data mode.
+    try:
+        if db.get_settings().get("pentest_base_url"):
+            return live_provider
+    except Exception:
+        pass
+    return mock_provider

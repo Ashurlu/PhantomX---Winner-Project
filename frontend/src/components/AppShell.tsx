@@ -36,7 +36,7 @@ export function AppShell() {
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: -10, filter: "blur(4px)" }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="mx-auto max-w-[1680px] px-6 py-6 pb-24 md:px-8 md:py-8 md:pb-28"
+            className="mx-auto max-w-[1680px] px-6 py-6 pb-8 md:px-8 md:py-8 md:pb-10"
           >
             {outlet}
           </motion.div>
