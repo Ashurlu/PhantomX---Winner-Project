@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import HTTPException
 
 from .. import db
-from ..data.investigation_pipeline_defaults import (
+from ..investigation_pipeline_defaults import (
     DEFAULT_LINKS,
     DEFAULT_METRICS,
     DEFAULT_NODES,

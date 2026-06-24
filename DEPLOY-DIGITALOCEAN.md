@@ -56,6 +56,7 @@ curl -fsSL https://get.docker.com | sh
 ```bash
 git clone https://github.com/YOUR_GITHUB_USER/PhantomX.git
 cd PhantomX
+git checkout capstone-platform
 
 cp deploy/.env.prod.example .env.prod
 nano .env.prod
@@ -154,6 +155,7 @@ User accounts and settings persist in the Docker volume `sentrix_data`.
 | Blank page | `docker compose ... logs frontend` |
 | Login fails | `docker compose ... logs backend` — check `JWT_SECRET` is set |
 | 502 on API | `docker compose ... ps` — backend must be healthy |
+| **Backend unhealthy** | `docker compose ... logs backend` — often `ModuleNotFoundError: investigation_pipeline_defaults` if deploy used an old clone. Pull latest `capstone-platform`, rebuild. Ensure `.env.prod` has `JWT_SECRET` set. |
 | **Web pentest module not found** | `pentest-agent/` was not in your GitHub repo. Commit it (see below), pull on the droplet, rebuild |
 | Out of memory | Resize droplet to 2 GB RAM |
 

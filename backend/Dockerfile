@@ -17,5 +17,8 @@ ENV PHANTOMX_DB_PATH=/app/data/phantomx.db
 ENV PENTEST_AGENT_ROOT=/app/pentest-agent
 RUN mkdir -p /app/data
 
+# Fail the image build if the app cannot import (catches missing source files on deploy).
+RUN python -c "from app.main import app; print('app import ok')"
+
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

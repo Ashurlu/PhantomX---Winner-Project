@@ -3,7 +3,8 @@ backend/.venv/
 __pycache__/
 *.pyc
 backend/.env
-backend/app/data/
+backend/app/data/*.db
+backend/app/data/avatars/
 .env.prod
 
 # Node
