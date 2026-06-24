@@ -140,31 +140,41 @@ class LiveProvider:
         return engine_from_settings(db.get_settings())
 
     async def tactics(self) -> list[dict]:
+        mock_tactics = await mock_provider.tactics()
+        mock_by_id = {t["id"]: t for t in mock_tactics}
         try:
             groups = await self._engine().tactics()
-            result = []
-            for g in groups:
-                tid = (
-                    g.get("id")
-                    or g.get("tactic_id")
-                    or g.get("tactic")
-                    or ""
-                )
-                name = g.get("name") or g.get("display_name") or tid
-                count = g.get("technique_count") or g.get("techniqueCount")
-                if count is None:
-                    count = len(g.get("techniques", []))
-                if tid:
-                    result.append(
-                        {"id": tid, "name": name, "techniqueCount": int(count)}
-                    )
-            if not result:
-                return await mock_provider.tactics()
-            return result
         except PentestEngineError:
-            return await mock_provider.tactics()
+            return mock_tactics
+
+        if not groups:
+            return mock_tactics
+
+        merged: dict[str, dict] = dict(mock_by_id)
+        for g in groups:
+            tid = (
+                g.get("id")
+                or g.get("tactic_id")
+                or g.get("tactic")
+                or ""
+            )
+            if not tid:
+                continue
+            name = g.get("name") or g.get("display_name") or merged.get(tid, {}).get("name", tid)
+            engine_count = g.get("technique_count") or g.get("techniqueCount")
+            if engine_count is None:
+                engine_count = len(g.get("techniques", []))
+            mock_count = merged.get(tid, {}).get("techniqueCount", 0)
+            merged[tid] = {
+                "id": tid,
+                "name": name,
+                "techniqueCount": max(int(engine_count), int(mock_count)),
+            }
+        return list(merged.values())
 
     async def techniques(self, tactic: str) -> list[dict]:
+        mock_list = await mock_provider.techniques(tactic)
+        mock_by_id = {t["id"]: t for t in mock_list}
         try:
             groups = await self._engine().tactics()
             group = next(
@@ -176,22 +186,41 @@ class LiveProvider:
                 ),
                 None,
             )
-            if group is None:
-                return await mock_provider.techniques(tactic)
-            mapped = [
-                self._map_technique(t, tactic) for t in group.get("techniques", [])
+            engine_mapped = [
+                self._map_technique(t, tactic) for t in (group or {}).get("techniques", [])
             ]
-            if not mapped:
-                return await mock_provider.techniques(tactic)
-            return mapped
         except PentestEngineError:
-            return await mock_provider.techniques(tactic)
+            return mock_list
+
+        if not engine_mapped:
+            return mock_list
+
+        merged = dict(mock_by_id)
+        for et in engine_mapped:
+            tid = et.get("id")
+            if not tid:
+                continue
+            # Prefer engine test metadata when available; keep mock shell otherwise.
+            if tid in merged and not et.get("tests"):
+                et = {**merged[tid], **et, "tests": merged[tid].get("tests", [])}
+            merged[tid] = et
+        return sorted(merged.values(), key=lambda t: t.get("id", ""))
 
     @staticmethod
     def _map_technique(t: dict, tactic: str) -> dict:
         tests = t.get("tests", [])
-        # Treat elevation-required tests as "blocked" for a standard user — a
-        # rough analogue of the mock blockedCount badge.
+        display = t.get("display_name", t.get("technique_id", ""))
+        if not tests:
+            tests = [
+                {
+                    "index": 0,
+                    "name": display,
+                    "platforms": ["windows"],
+                    "elevation_required": False,
+                    "domain_required": bool(t.get("domain_required")),
+                    "executor": "command_prompt",
+                }
+            ]
         blocked = sum(1 for ts in tests if ts.get("elevation_required"))
         return {
             "id": t.get("technique_id", ""),
@@ -512,10 +541,17 @@ class LiveProvider:
         return await self._engine().providers()
 
     async def search_techniques(self, q: str) -> list[dict]:
+        mock_hits = await mock_provider.search_techniques(q)
         try:
-            return await self._engine().search_techniques(q)
+            engine_hits = await self._engine().search_techniques(q)
         except PentestEngineError:
-            return await mock_provider.search_techniques(q)
+            return mock_hits
+        if not engine_hits:
+            return mock_hits
+        by_id = {h["technique_id"]: h for h in mock_hits}
+        for h in engine_hits:
+            by_id[h["technique_id"]] = h
+        return list(by_id.values())
 
     async def analysis(self, run_id: str) -> dict | None:
         record = self._runs.get(run_id)
