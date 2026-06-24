@@ -21,10 +21,17 @@ from ..models import (
     ConnectionTestResult,
     CreateUserRequest,
     IntegrationStatus,
+    InvestigationPipelineConfig,
+    InvestigationPipelineUpdate,
     PasswordUpdate,
     RoleUpdate,
     SystemStatus,
     UserOut,
+)
+from ..services.investigation_pipeline import (
+    get_pipeline_config,
+    reset_pipeline_config,
+    save_pipeline_config,
 )
 from ..services.provider import get_provider
 
@@ -71,6 +78,32 @@ async def update_settings(body: AdminSettingsUpdate, admin: dict = Depends(admin
     changed = ", ".join(sorted(patch.keys())) or "nothing"
     db.add_audit(admin["username"], "settings.update", f"changed: {changed}")
     return _settings_to_model(db.update_settings(patch))
+
+
+# ---------- Investigation pipeline ----------
+@router.get("/investigation-pipeline", response_model=InvestigationPipelineConfig)
+async def get_investigation_pipeline_admin(_: dict = Depends(admin_only)):
+    return get_pipeline_config()
+
+
+@router.put("/investigation-pipeline", response_model=InvestigationPipelineConfig)
+async def update_investigation_pipeline(
+    body: InvestigationPipelineUpdate, admin: dict = Depends(admin_only)
+):
+    result = save_pipeline_config(body)
+    db.add_audit(
+        admin["username"],
+        "investigation_pipeline.update",
+        f"{len(body.nodes)} nodes, {len(body.links)} links",
+    )
+    return result
+
+
+@router.post("/investigation-pipeline/reset", response_model=InvestigationPipelineConfig)
+async def reset_investigation_pipeline(admin: dict = Depends(admin_only)):
+    result = reset_pipeline_config()
+    db.add_audit(admin["username"], "investigation_pipeline.reset", "defaults restored")
+    return result
 
 
 # ---------- User management ----------

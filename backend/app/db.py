@@ -5,6 +5,7 @@ Settings default from .env but are editable at runtime via the admin page.
 """
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import sqlite3
@@ -578,6 +579,46 @@ def list_audit(limit: int = 150) -> list[dict]:
             }
             for r in rows
         ]
+    finally:
+        conn.close()
+
+
+INVESTIGATION_PIPELINE_KEY = "investigation_pipeline"
+
+
+def get_investigation_pipeline() -> dict | None:
+    conn = _conn()
+    try:
+        row = conn.execute(
+            "SELECT value FROM settings WHERE key = ?", (INVESTIGATION_PIPELINE_KEY,)
+        ).fetchone()
+        if row is None or not row["value"]:
+            return None
+        return json.loads(row["value"])
+    except (json.JSONDecodeError, TypeError):
+        return None
+    finally:
+        conn.close()
+
+
+def set_investigation_pipeline(data: dict) -> None:
+    conn = _conn()
+    try:
+        conn.execute(
+            "INSERT INTO settings (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (INVESTIGATION_PIPELINE_KEY, json.dumps(data)),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def clear_investigation_pipeline() -> None:
+    conn = _conn()
+    try:
+        conn.execute("DELETE FROM settings WHERE key = ?", (INVESTIGATION_PIPELINE_KEY,))
+        conn.commit()
     finally:
         conn.close()
 

@@ -30,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LoadingState } from "@/components/States";
-import { useCasesInbox } from "@/lib/api";
+import { useCasesInbox, useCreateCase, useDeleteCase, usePatchCase } from "@/lib/api";
 import { SEVERITY_COLORS, type Severity } from "@/lib/theme";
 import type { CaseAssignee, CaseHistoryEvent, CaseStatus, InboxCase } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -48,10 +48,12 @@ import {
   type SortOption,
 } from "./cases-helpers";
 
-type CasePatch = Partial<Pick<InboxCase, "severity" | "flags" | "tasksDone" | "tasksTotal">>;
 
 export function CasesInboxPage() {
   const { data, isLoading } = useCasesInbox();
+  const createCaseMut = useCreateCase();
+  const patchCaseMut = usePatchCase();
+  const deleteCaseMut = useDeleteCase();
   const { username } = useAuth();
   const [searchParams] = useSearchParams();
   const deepLinkCase = searchParams.get("case");
@@ -62,30 +64,14 @@ export function CasesInboxPage() {
   const [sortBy, setSortBy] = useState<SortOption>("priority");
   const [priorityFilter, setPriorityFilter] = useState<Set<Severity>>(new Set());
   const [tagFilter, setTagFilter] = useState<Set<string>>(new Set());
-  const [statusOverride, setStatusOverride] = useState<Record<string, CaseStatus>>({});
-  const [assigneeOverride, setAssigneeOverride] = useState<Record<string, CaseAssignee | null>>({});
-  const [patches, setPatches] = useState<Record<string, CasePatch>>({});
-  const [extraCases, setExtraCases] = useState<InboxCase[]>([]);
-  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState<Record<string, string[]>>({});
   const [taskChecks, setTaskChecks] = useState<Record<string, boolean[]>>({});
-  const [extraHistory, setExtraHistory] = useState<Record<string, CaseHistoryEvent[]>>({});
   const [addOpen, setAddOpen] = useState(false);
   const [dragOverCol, setDragOverCol] = useState<CaseStatus | null>(null);
 
   const myInitials = initialsFromUsername(username ?? "");
 
-  const applyPatch = (c: InboxCase): InboxCase => {
-    const p = patches[c.id];
-    const status = statusOverride[c.id] ?? c.status;
-    const assignee = c.id in assigneeOverride ? assigneeOverride[c.id] : c.assignee;
-    return { ...c, ...p, status, assignee };
-  };
-
-  const allCases = useMemo(() => {
-    const base = [...extraCases, ...(data ?? [])].filter((c) => !deletedIds.has(c.id));
-    return base.map(applyPatch);
-  }, [data, extraCases, statusOverride, assigneeOverride, patches, deletedIds]);
+  const allCases = useMemo(() => data ?? [], [data]);
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();
@@ -123,28 +109,51 @@ export function CasesInboxPage() {
   const counts = useMemo(() => countByStatus(allCases), [allCases]);
   const selected = allCases.find((c) => c.id === selectedId) ?? null;
 
-  const pushHistory = (caseId: string, event: CaseHistoryEvent) => {
-    setExtraHistory((prev) => ({
-      ...prev,
-      [caseId]: [event, ...(prev[caseId] ?? [])],
-    }));
+  const persistPatch = async (
+    id: string,
+    patch: {
+      status?: CaseStatus;
+      severity?: Severity;
+      assignee?: CaseAssignee | null;
+      unassign?: boolean;
+      flags?: number;
+      tasksDone?: number;
+      historyEvent?: CaseHistoryEvent;
+      note?: string;
+    },
+    successMsg: string
+  ) => {
+    try {
+      await patchCaseMut.mutateAsync({ caseId: id, ...patch });
+      toast.success(successMsg);
+    } catch {
+      toast.error("Could not save case changes");
+    }
   };
 
   const moveCase = (id: string, status: CaseStatus) => {
-    setStatusOverride((prev) => ({ ...prev, [id]: status }));
     const label = COLUMNS.find((c) => c.status === status)?.label ?? status;
-    pushHistory(id, newHistoryEvent("status_change", username ?? "You", `Status changed to ${label}`));
-    toast.success(`Case moved to ${label}`);
+    void persistPatch(
+      id,
+      {
+        status,
+        historyEvent: newHistoryEvent("status_change", username ?? "You", `Status changed to ${label}`),
+      },
+      `Case moved to ${label}`
+    );
   };
 
-  const patchCase = (id: string, patch: CasePatch) =>
-    setPatches((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
-
-  const addCase = (c: InboxCase) => {
-    setExtraCases((prev) => [c, ...prev]);
-    setSelectedId(c.id);
-    pushHistory(c.id, newHistoryEvent("created", username ?? "You", "Case created manually"));
-    toast.success("Case created");
+  const addCase = async (c: InboxCase) => {
+    try {
+      await createCaseMut.mutateAsync({
+        ...c,
+        historyEvent: newHistoryEvent("created", username ?? "You", "Case created manually"),
+      });
+      setSelectedId(c.id);
+      toast.success("Case created");
+    } catch {
+      toast.error("Could not create case — is the backend running?");
+    }
   };
 
   const togglePriority = (s: Severity) =>
@@ -162,42 +171,71 @@ export function CasesInboxPage() {
     });
 
   const handleAssign = (id: string, assignee: CaseAssignee | null) => {
-    setAssigneeOverride((prev) => ({ ...prev, [id]: assignee }));
-    pushHistory(
+    void persistPatch(
       id,
-      newHistoryEvent(
-        "assigned",
-        username ?? "You",
-        assignee ? `Assigned to ${assignee.name}` : "Case unassigned"
-      )
+      assignee
+        ? {
+            assignee,
+            historyEvent: newHistoryEvent("assigned", username ?? "You", `Assigned to ${assignee.name}`),
+          }
+        : {
+            unassign: true,
+            historyEvent: newHistoryEvent("assigned", username ?? "You", "Case unassigned"),
+          },
+      assignee ? `Assigned to ${assignee.name}` : "Case unassigned"
     );
-    toast.success(assignee ? `Assigned to ${assignee.name}` : "Case unassigned");
   };
 
   const handleSeverity = (id: string, severity: Severity) => {
-    patchCase(id, { severity });
-    pushHistory(id, newHistoryEvent("note", username ?? "You", `Priority changed to ${severity}`));
-    toast.success(`Priority set to ${severity}`);
+    void persistPatch(
+      id,
+      {
+        severity,
+        historyEvent: newHistoryEvent("note", username ?? "You", `Priority changed to ${severity}`),
+      },
+      `Priority set to ${severity}`
+    );
   };
 
   const handleFlag = (id: string) => {
     const c = allCases.find((x) => x.id === id);
     const flags = (c?.flags ?? 0) + 1;
-    patchCase(id, { flags });
-    pushHistory(id, newHistoryEvent("note", username ?? "You", "Case flagged"));
-    toast.success("Case flagged");
+    void persistPatch(
+      id,
+      {
+        flags,
+        historyEvent: newHistoryEvent("note", username ?? "You", "Case flagged"),
+      },
+      "Case flagged"
+    );
   };
 
   const handleDelete = (id: string) => {
-    setDeletedIds((prev) => new Set(prev).add(id));
-    if (selectedId === id) setSelectedId(null);
-    toast.success("Case removed");
+    void (async () => {
+      try {
+        await deleteCaseMut.mutateAsync(id);
+        if (selectedId === id) setSelectedId(null);
+        toast.success("Case removed");
+      } catch {
+        toast.error("Could not delete case");
+      }
+    })();
   };
 
   const handleAddNote = (id: string, text: string) => {
     setNotes((prev) => ({ ...prev, [id]: [text, ...(prev[id] ?? [])] }));
-    pushHistory(id, newHistoryEvent("note", username ?? "You", `Note added: ${text.slice(0, 60)}${text.length > 60 ? "…" : ""}`));
-    toast.success("Note saved");
+    void persistPatch(
+      id,
+      {
+        note: text,
+        historyEvent: newHistoryEvent(
+          "note",
+          username ?? "You",
+          `Note added: ${text.slice(0, 60)}${text.length > 60 ? "…" : ""}`
+        ),
+      },
+      "Note saved"
+    );
   };
 
   const handleToggleTask = (id: string, index: number) => {
@@ -207,7 +245,7 @@ export function CasesInboxPage() {
     const next = [...prev];
     next[index] = !next[index];
     setTaskChecks((s) => ({ ...s, [id]: next }));
-    patchCase(id, { tasksDone: next.filter(Boolean).length });
+    void persistPatch(id, { tasksDone: next.filter(Boolean).length }, "Task updated");
   };
 
   const activeFilters = priorityFilter.size + tagFilter.size;
@@ -351,7 +389,7 @@ export function CasesInboxPage() {
             caseData={selected}
             notes={notes[selected.id] ?? []}
             taskChecks={taskChecks[selected.id] ?? Array(selected.tasksTotal).fill(false)}
-            extraHistory={extraHistory[selected.id] ?? []}
+            extraHistory={[]}
             onStatusChange={moveCase}
             onSeverityChange={handleSeverity}
             onAssign={handleAssign}
@@ -445,7 +483,7 @@ function AddCaseDialog({
   onOpenChange: (v: boolean) => void;
   myInitials: string;
   username: string;
-  onCreate: (c: InboxCase) => void;
+  onCreate: (c: InboxCase) => void | Promise<void>;
 }) {
   const [title, setTitle] = useState("");
   const [severity, setSeverity] = useState<Severity>("medium");
@@ -465,7 +503,7 @@ function AddCaseDialog({
     if (!title.trim()) return;
     const now = new Date();
     const due = new Date(now.getTime() + 8 * 3600_000);
-    onCreate({
+    void onCreate({
       id: `PX-C${Math.floor(100000 + Math.random() * 899999)}`,
       title: title.trim(),
       severity,

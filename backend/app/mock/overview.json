@@ -55,10 +55,10 @@
   "incidentsResolved": 7,
   "incidentsOpen": 11,
   "openBySeverity": {
-    "critical": 1,
-    "high": 2,
-    "medium": 2,
-    "low": 1
+    "critical": 3,
+    "high": 3,
+    "medium": 3,
+    "low": 2
   },
   "falsePositivesAutoClosed": 1562,
   "kpis": {

@@ -134,6 +134,52 @@ class SystemStatus(BaseModel):
     integrations: list[IntegrationStatus]
 
 
+# ---------- Investigation pipeline (Sankey + summary metrics) ----------
+class SankeyNodeConfig(BaseModel):
+    id: str
+    label: str
+    value: int
+    column: int
+    row: int
+    color: Optional[str] = None
+
+
+class SankeyLinkConfig(BaseModel):
+    source: str
+    target: str
+    value: int
+    color: Optional[str] = None
+
+
+class PipelineMetricSlice(BaseModel):
+    name: str
+    value: int
+    pct: int
+    color: str
+
+
+class PipelineSummaryMetrics(BaseModel):
+    escalated: Optional[int] = None
+    notEscalated: Optional[int] = None
+    timeSaved: Optional[str] = None
+    totalAlerts: Optional[int] = None
+    sources: Optional[list[PipelineMetricSlice]] = None
+    determinations: Optional[list[PipelineMetricSlice]] = None
+
+
+class InvestigationPipelineConfig(BaseModel):
+    configured: bool
+    nodes: list[SankeyNodeConfig]
+    links: list[SankeyLinkConfig]
+    metrics: Optional[PipelineSummaryMetrics] = None
+
+
+class InvestigationPipelineUpdate(BaseModel):
+    nodes: list[SankeyNodeConfig]
+    links: list[SankeyLinkConfig]
+    metrics: Optional[PipelineSummaryMetrics] = None
+
+
 # ---------- Overview (11.2) ----------
 class Source(BaseModel):
     name: str
@@ -307,6 +353,41 @@ class InboxStats(BaseModel):
     inProgress: int
     done: int
     total: int
+
+
+class InboxCaseCreate(BaseModel):
+    id: str = Field(..., min_length=3, max_length=32)
+    title: str = Field(..., min_length=1, max_length=256)
+    severity: Severity
+    status: CaseStatus = "open"
+    tags: list[str] = []
+    assignee: Optional[CaseAssignee] = None
+    createdAt: str
+    dueAt: str
+    slaHours: int = 8
+    elapsedHours: int = 0
+    tasksDone: int = 0
+    tasksTotal: int = 5
+    flags: int = 0
+    attachments: int = 0
+    aiSummary: str = ""
+    sourceAlertId: Optional[str] = None
+    linkedRuleId: Optional[str] = None
+    historyEvent: Optional[CaseHistoryEvent] = None
+
+
+class InboxCasePatch(BaseModel):
+    title: Optional[str] = Field(None, max_length=256)
+    severity: Optional[Severity] = None
+    status: Optional[CaseStatus] = None
+    tags: Optional[list[str]] = None
+    assignee: Optional[CaseAssignee] = None
+    unassign: bool = False
+    flags: Optional[int] = None
+    tasksDone: Optional[int] = None
+    tasksTotal: Optional[int] = None
+    historyEvent: Optional[CaseHistoryEvent] = None
+    note: Optional[str] = Field(None, max_length=4000)
 
 
 # ---------- Recommended Rules (11.4) ----------
@@ -546,22 +627,91 @@ class ChatHistoryMessage(BaseModel):
     content: str
 
 
+ChatMode = Literal["auto", "search", "analyze", "hunt", "brief"]
+ChatScope = Literal["all", "cases", "alerts", "rules", "detection"]
+
+
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=4000)
     history: list[ChatHistoryMessage] = []
+    mode: ChatMode = "auto"
+    scope: ChatScope = "all"
+    context_path: str | None = Field(None, max_length=256)
+    time_range: str | None = Field(None, max_length=16)
 
 
 class ChatCitation(BaseModel):
-    kind: Literal["case", "alert", "rule"]
+    kind: Literal["case", "alert", "rule", "page"]
     id: str
     title: str
     path: str
+
+
+class ChatAction(BaseModel):
+    label: str
+    path: str
+    kind: Literal["navigate", "filter"] = "navigate"
 
 
 class ChatResponse(BaseModel):
     reply: str
     source: Literal["local", "openrouter", "openai", "anthropic"]
     citations: list[ChatCitation] = []
+    actions: list[ChatAction] = []
+    mode: ChatMode = "auto"
+
+
+# ---------- Threat Hunt ----------
+class HuntPlanStep(BaseModel):
+    label: str
+    detail: str
+    done: bool = False
+
+
+class HuntFinding(BaseModel):
+    id: str
+    name: str
+    summary: str
+    status: Literal["Malicious", "Suspicious", "Unknown", "Benign"]
+    severity: str | None = None
+    path: str | None = None
+    kind: str | None = None
+
+
+class HuntDiscoveryItem(BaseModel):
+    id: str
+    label: str
+    status: str = "Unknown"
+    meta: str | None = None
+
+
+class HuntDiscoveries(BaseModel):
+    hosts: list[HuntDiscoveryItem] = []
+    files: list[HuntDiscoveryItem] = []
+    network: list[HuntDiscoveryItem] = []
+    other: list[HuntDiscoveryItem] = []
+
+
+class HuntRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=4000)
+    history: list[ChatHistoryMessage] = []
+    time_range: str | None = Field(None, max_length=16)
+    context_path: str | None = Field(None, max_length=256)
+
+
+class HuntResponse(BaseModel):
+    reply: str
+    source: Literal["local", "openrouter", "openai", "anthropic"]
+    thought_seconds: int = 3
+    plan: list[HuntPlanStep] = []
+    confirmed: list[HuntFinding] = []
+    leads: list[HuntFinding] = []
+    discoveries: HuntDiscoveries
+    raw: list[dict] = []
+    citations: list[ChatCitation] = []
+    actions: list[ChatAction] = []
+    query: str
+    ran_at: str
 
 
 # ---------- CRAMM (Risk Matrix) ----------

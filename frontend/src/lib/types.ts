@@ -60,6 +60,51 @@ export interface SystemStatus {
   integrations: IntegrationStatus[];
 }
 
+export interface SankeyNodeConfig {
+  id: string;
+  label: string;
+  value: number;
+  column: number;
+  row: number;
+  color?: string;
+}
+
+export interface SankeyLinkConfig {
+  source: string;
+  target: string;
+  value: number;
+  color?: string;
+}
+
+export interface PipelineMetricSlice {
+  name: string;
+  value: number;
+  pct: number;
+  color: string;
+}
+
+export interface PipelineSummaryMetrics {
+  escalated?: number;
+  notEscalated?: number;
+  timeSaved?: string;
+  totalAlerts?: number;
+  sources?: PipelineMetricSlice[];
+  determinations?: PipelineMetricSlice[];
+}
+
+export interface InvestigationPipelineConfig {
+  configured: boolean;
+  nodes: SankeyNodeConfig[];
+  links: SankeyLinkConfig[];
+  metrics?: PipelineSummaryMetrics | null;
+}
+
+export interface InvestigationPipelineUpdate {
+  nodes: SankeyNodeConfig[];
+  links: SankeyLinkConfig[];
+  metrics?: PipelineSummaryMetrics | null;
+}
+
 export interface CreateUserReq {
   username: string;
   password: string;
@@ -129,6 +174,20 @@ export interface DetectionWeeklyBar {
   a: number;
   b: number;
   c: number;
+}
+
+export type CoverageLevel = "full" | "majority" | "enriched" | "partial" | "none";
+
+export interface DetectionCoverageAlert {
+  title: string;
+  count: number;
+  coverage: CoverageLevel;
+}
+
+export interface DetectionCoverageSource {
+  name: string;
+  total: number;
+  alerts: DetectionCoverageAlert[];
 }
 
 export interface DetectionIntel {
@@ -403,23 +462,90 @@ export interface CoverageEntry {
 
 // ---------- SOC Chat ----------
 export interface ChatCitation {
-  kind: "case" | "alert" | "rule";
+  kind: "case" | "alert" | "rule" | "page";
   id: string;
   title: string;
   path: string;
 }
+
+export interface ChatAction {
+  label: string;
+  path: string;
+  kind: "navigate" | "filter";
+}
+
+export type SocChatMode = "auto" | "search" | "analyze" | "hunt" | "brief";
+export type SocChatScope = "all" | "cases" | "alerts" | "rules" | "detection";
 
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   source?: "local" | "openrouter" | "openai" | "anthropic";
   citations?: ChatCitation[];
+  actions?: ChatAction[];
+  mode?: SocChatMode;
 }
 
 export interface ChatResponse {
   reply: string;
   source: "local" | "openrouter" | "openai" | "anthropic";
   citations: ChatCitation[];
+  actions?: ChatAction[];
+  mode?: SocChatMode;
+}
+
+// ---------- Threat Hunt ----------
+export interface HuntPlanStep {
+  label: string;
+  detail: string;
+  done: boolean;
+}
+
+export interface HuntFinding {
+  id: string;
+  name: string;
+  summary: string;
+  status: "Malicious" | "Suspicious" | "Unknown" | "Benign";
+  severity?: string | null;
+  path?: string | null;
+  kind?: string | null;
+}
+
+export interface HuntDiscoveryItem {
+  id: string;
+  label: string;
+  status: string;
+  meta?: string | null;
+}
+
+export interface HuntDiscoveries {
+  hosts: HuntDiscoveryItem[];
+  files: HuntDiscoveryItem[];
+  network: HuntDiscoveryItem[];
+  other: HuntDiscoveryItem[];
+}
+
+export interface HuntResponse {
+  reply: string;
+  source: "local" | "openrouter" | "openai" | "anthropic";
+  thought_seconds: number;
+  plan: HuntPlanStep[];
+  confirmed: HuntFinding[];
+  leads: HuntFinding[];
+  discoveries: HuntDiscoveries;
+  raw: Record<string, unknown>[];
+  citations: ChatCitation[];
+  actions: ChatAction[];
+  query: string;
+  ran_at: string;
+}
+
+export interface HuntHistoryEntry {
+  query: string;
+  ran_at: string;
+  confirmed: number;
+  leads: number;
+  summary: string;
 }
 
 // ---------- CRAMM ----------

@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import db
 from .config import settings
-from .routers import admin, ai_court, attack, auth, cases, chat, cramm, detection, overview, pentest, profile, rules
+from .routers import admin, ai_court, attack, auth, cases, chat, cramm, detection, hunt, overview, pentest, profile, rules
 from .web_pentest_mount import include_web_pentest
 
 app = FastAPI(title=f"{settings.APP_NAME} BFF", version="1.0.0")
@@ -39,6 +39,7 @@ app.include_router(detection.router)  # Alert intelligence aggregates
 app.include_router(ai_court.router)
 app.include_router(cases.router)
 app.include_router(chat.router)
+app.include_router(hunt.router)
 app.include_router(rules.router)
 app.include_router(cramm.router)
 app.include_router(pentest.router)

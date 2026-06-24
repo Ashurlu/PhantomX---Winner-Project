@@ -6,6 +6,7 @@ import {
 import { useAuth, useAuthHydrated, useAdminQueryEnabled } from "@/store/auth";
 import { rangeCodeFromTimestamps, useUi } from "@/store/ui";
 import { detectionFallback } from "@/lib/detection-fallback";
+import { huntFallback } from "@/lib/hunt-fallback";
 import { casesInboxCaseFallback, casesInboxFallback } from "@/lib/cases-fallback";
 import {
   searchTechniquesFallback,
@@ -22,6 +23,7 @@ import type {
   CaseSummary,
   InboxCase,
   InboxCaseDetail,
+  CaseHistoryEvent,
   InboxStats,
   CaseAssignee,
   ConnectionTestResult,
@@ -46,6 +48,11 @@ import type {
   UserOut,
   UserProfile,
   ChatResponse,
+  HuntResponse,
+  SocChatMode,
+  SocChatScope,
+  InvestigationPipelineConfig,
+  InvestigationPipelineUpdate,
   CrammDetail,
   CrammMatrix,
   CrammAudit,
@@ -210,6 +217,16 @@ export function useOverview() {
   });
 }
 
+export function useInvestigationPipeline() {
+  const token = useAuth((s) => s.token);
+  return useQuery({
+    queryKey: ["investigation-pipeline"],
+    queryFn: () => request<InvestigationPipelineConfig>("/investigation-pipeline"),
+    enabled: !!token,
+    staleTime: 60_000,
+  });
+}
+
 // ---------- Detection ----------
 export function useDetection() {
   const from = useUi((s) => s.timeFrom);
@@ -265,8 +282,11 @@ export function useCasesInbox() {
     queryFn: async () => {
       try {
         return await request<InboxCase[]>("/cases/inbox");
-      } catch {
-        return casesInboxFallback();
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404) {
+          return casesInboxFallback();
+        }
+        throw e;
       }
     },
     refetchInterval: 30000,
@@ -279,8 +299,11 @@ export function useCasesInboxCase(caseId: string | null) {
     queryFn: async () => {
       try {
         return await request<InboxCaseDetail>(`/cases/inbox/${caseId}`);
-      } catch {
-        return casesInboxCaseFallback(caseId!);
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404) {
+          return casesInboxCaseFallback(caseId!);
+        }
+        throw e;
       }
     },
     enabled: !!caseId,
@@ -304,6 +327,59 @@ export function useCaseAssignees() {
     queryFn: () => request<CaseAssignee[]>("/cases/assignees"),
     enabled: hasHydrated && !!token,
     staleTime: 60_000,
+  });
+}
+
+export function useCreateCase() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: InboxCase & { historyEvent?: CaseHistoryEvent }) =>
+      request<InboxCaseDetail>("/cases/inbox", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["cases"] });
+    },
+  });
+}
+
+export function usePatchCase() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      caseId,
+      ...body
+    }: {
+      caseId: string;
+      status?: InboxCase["status"];
+      severity?: InboxCase["severity"];
+      assignee?: CaseAssignee | null;
+      unassign?: boolean;
+      flags?: number;
+      tasksDone?: number;
+      historyEvent?: CaseHistoryEvent;
+      note?: string;
+    }) =>
+      request<InboxCaseDetail>(`/cases/inbox/${encodeURIComponent(caseId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: (_data, vars) => {
+      void qc.invalidateQueries({ queryKey: ["cases"] });
+      void qc.invalidateQueries({ queryKey: ["cases", "inbox", vars.caseId] });
+    },
+  });
+}
+
+export function useDeleteCase() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (caseId: string) =>
+      request<void>(`/cases/inbox/${encodeURIComponent(caseId)}`, { method: "DELETE" }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["cases"] });
+    },
   });
 }
 
@@ -522,6 +598,44 @@ export function useUpdateSettings() {
   });
 }
 
+export function useAdminInvestigationPipeline() {
+  const enabled = useAdminQueryEnabled();
+  return useQuery({
+    queryKey: ["admin", "investigation-pipeline"],
+    queryFn: () => request<InvestigationPipelineConfig>("/admin/investigation-pipeline"),
+    enabled,
+  });
+}
+
+export function useUpdateInvestigationPipeline() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: InvestigationPipelineUpdate) =>
+      request<InvestigationPipelineConfig>("/admin/investigation-pipeline", {
+        method: "PUT",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "investigation-pipeline"] });
+      qc.invalidateQueries({ queryKey: ["investigation-pipeline"] });
+    },
+  });
+}
+
+export function useResetInvestigationPipeline() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      request<InvestigationPipelineConfig>("/admin/investigation-pipeline/reset", {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "investigation-pipeline"] });
+      qc.invalidateQueries({ queryKey: ["investigation-pipeline"] });
+    },
+  });
+}
+
 export function useUsers() {
   const enabled = useAdminQueryEnabled();
   return useQuery({
@@ -690,12 +804,40 @@ export async function downloadNavigatorLayer() {
   URL.revokeObjectURL(url);
 }
 
+// ---------- Threat Hunt ----------
+export function useThreatHunt() {
+  return useMutation({
+    mutationFn: async (body: {
+      message: string;
+      history: { role: "user" | "assistant"; content: string }[];
+      time_range?: string;
+      context_path?: string;
+    }) => {
+      try {
+        return await request<HuntResponse>("/hunt", {
+          method: "POST",
+          body: JSON.stringify(body),
+        });
+      } catch (e) {
+        if (e instanceof ApiError && (e.status === 404 || e.status === 502)) {
+          return huntFallback(body.message, body.time_range);
+        }
+        throw e;
+      }
+    },
+  });
+}
+
 // ---------- SOC Chat ----------
 export function useSocChat() {
   return useMutation({
     mutationFn: (body: {
       message: string;
       history: { role: "user" | "assistant"; content: string }[];
+      mode?: SocChatMode;
+      scope?: SocChatScope;
+      context_path?: string;
+      time_range?: string;
     }) =>
       request<ChatResponse>("/chat", {
         method: "POST",

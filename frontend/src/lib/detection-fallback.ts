@@ -1,23 +1,29 @@
 import type { DetectionIntel } from "@/lib/types";
 import type { RangeCode } from "@/store/ui";
+import {
+  buildRealisticWeeklySeries,
+  weeklyAverageFromSeries,
+} from "@/lib/detection-weekly-data";
+
+const WEEKLY = buildRealisticWeeklySeries(30);
 
 const BASE: DetectionIntel = {
   totalAlerts: 2847,
-  weeklyAverage: 118,
+  weeklyAverage: weeklyAverageFromSeries(WEEKLY),
   period: "24h",
   categories: [
-    { name: "Endpoint", value: 982, color: "#ec4899" },
-    { name: "Email", value: 712, color: "#3b82f6" },
-    { name: "Identity", value: 468, color: "#6366f1" },
-    { name: "Cloud", value: 385, color: "#06b6d4" },
-    { name: "Threat Intel", value: 198, color: "#14b8a6" },
-    { name: "Insider Threat", value: 102, color: "#94a3b8" },
+    { name: "Endpoint", value: 982, color: "#6B5CE7" },
+    { name: "Email", value: 712, color: "#4A7FD4" },
+    { name: "Identity", value: 468, color: "#B8B0E8" },
+    { name: "Cloud", value: 385, color: "#2E8B6A" },
+    { name: "Threat Intel", value: 198, color: "#9DC4E0" },
+    { name: "Insider Threat", value: 102, color: "#90A4AE" },
   ],
   severities: [
-    { name: "Critical", value: 142, color: "#dc2626" },
-    { name: "High", value: 512, color: "#f97316" },
-    { name: "Medium", value: 1288, color: "#f59e0b" },
-    { name: "Low", value: 905, color: "#3B82F6" },
+    { name: "Critical", value: 142, color: "#E53935" },
+    { name: "High", value: 512, color: "#FF7043" },
+    { name: "Medium", value: 1288, color: "#FFC107" },
+    { name: "Low", value: 905, color: "#4A7FD4" },
   ],
   sources: [
     { name: "Microsoft Defender", value: 912, pct: 32, tags: "Email, Threat Intel" },
@@ -27,11 +33,8 @@ const BASE: DetectionIntel = {
     { name: "Splunk", value: 313, pct: 11, tags: "Various" },
     { name: "AWS GuardDuty", value: 142, pct: 5, tags: "Cloud" },
   ],
-  weekly: Array.from({ length: 30 }, (_, i) => {
-    const d = i + 1;
-    return { day: d, a: 45 + (d % 7) * 3, b: 38 + (d % 5) * 2, c: 28 + (d % 4) };
-  }),
-  weeklyLegend: ["CrowdStrike", "Splunk", "Microsoft Defender", "Sumo Logic", "Other"],
+  weekly: WEEKLY,
+  weeklyLegend: ["CrowdStrike", "Splunk", "Microsoft Defender"],
 };
 
 const RANGE_FACTORS: Record<RangeCode, number> = {

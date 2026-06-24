@@ -163,15 +163,16 @@ def main() -> None:
     open_c = [x for x in cases if x["status"] == "open"]
     prog_c = [x for x in cases if x["status"] == "in_progress"]
     done_c = [x for x in cases if x["status"] == "done"]
+    active_c = open_c + prog_c
 
     def sev_count(items, sev):
         return sum(1 for x in items if x["severity"] == sev)
 
     open_by = {
-        "critical": sev_count(open_c, "critical"),
-        "high": sev_count(open_c, "high"),
-        "medium": sev_count(open_c, "medium"),
-        "low": sev_count(open_c, "low"),
+        "critical": sev_count(active_c, "critical"),
+        "high": sev_count(active_c, "high"),
+        "medium": sev_count(active_c, "medium"),
+        "low": sev_count(active_c, "low"),
     }
 
     overview = {

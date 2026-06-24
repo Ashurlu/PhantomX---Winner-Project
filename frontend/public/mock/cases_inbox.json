@@ -488,7 +488,7 @@
     "tasksTotal": 4,
     "flags": 0,
     "attachments": 4,
-    "aiSummary": "Correlated with AI Court alert A-1395 — n8n rule R-35. Auto-triage confidence high; see tribunal evidence.",
+    "aiSummary": "Resolved — escalated from alert A-1395 via n8n rule R-35 (historical, outside current 24h AI Court window).",
     "history": [
       {
         "id": "h1",
@@ -590,7 +590,7 @@
     "tasksTotal": 5,
     "flags": 0,
     "attachments": 5,
-    "aiSummary": "Correlated with AI Court alert A-1412 — n8n rule R-36. Auto-triage confidence high; see tribunal evidence.",
+    "aiSummary": "Resolved — escalated from alert A-1412 via n8n rule R-36 (historical, outside current 24h AI Court window).",
     "history": [
       {
         "id": "h1",

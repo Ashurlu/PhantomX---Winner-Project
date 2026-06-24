@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Bar,
@@ -12,17 +12,22 @@ import {
 } from "recharts";
 import { Card } from "@/components/ui/card";
 import { AlertTimeTimeline } from "@/components/AlertTimeTimeline";
+import { AlertSourceBreakdown } from "@/components/charts/AlertSourceBreakdown";
+import { InvestigationCoverageTreemap } from "@/components/charts/InvestigationCoverageTreemap";
 import { CardSkeletonGrid, ErrorState } from "@/components/States";
 import { ModuleHero, ModuleLiveBadge, ModulePanel } from "@/components/module";
-import { useDetection } from "@/lib/api";
+import { useDetection, useOverview, useInvestigationPipeline } from "@/lib/api";
+import { sliceWeeklyForPeriod, weeklyAverageFromSeries } from "@/lib/detection-weekly-data";
+import { buildOverviewPipeline } from "@/lib/overview-metrics";
 import { formatTimeRangeShort } from "@/lib/time-range";
 import { SEVERITY_COLORS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
-import { useUi } from "@/store/ui";
+import { useUi, rangeCodeFromTimestamps } from "@/store/ui";
+import { ThreatHuntPanel } from "./ThreatHuntPanel";
 
 import type { DetectionWeeklyBar } from "@/lib/types";
 
-const WEEKLY_COLORS = ["#1f3d34", "#4d6b5f", "#9fb5ad", "#cbd5e1", "#e2e8f0"];
+const WEEKLY_COLORS = ["#6B5CE7", "#4A7FD4", "#2E8B6A"];
 const WEEKLY_STACK_KEYS = ["a", "b", "c"] as const;
 
 const SEV_NAME_COLORS: Record<string, string> = {
@@ -41,6 +46,8 @@ const CHART_TOOLTIP_STYLE = {
   boxShadow: "0 4px 12px hsl(0 0% 0% / 0.15)",
 };
 
+type PageTab = "intelligence" | "hunt";
+
 function pct(value: number, total: number) {
   return total > 0 ? Math.round((value / total) * 100) : 0;
 }
@@ -52,7 +59,6 @@ function normalizeSeverityColors(data: { name: string; value: number; color: str
   }));
 }
 
-/** Map internal a/b/c keys to human-readable source names from the legend. */
 function weeklySourceNames(legend: string[]) {
   return WEEKLY_STACK_KEYS.map((_, i) => legend[i] ?? `Source ${i + 1}`);
 }
@@ -98,6 +104,8 @@ function Donut({
                 activeIndex={active}
                 onMouseEnter={(_, i) => setActive(i)}
                 onMouseLeave={() => setActive(undefined)}
+                isAnimationActive
+                animationDuration={900}
               >
                 {data.map((d, i) => (
                   <Cell
@@ -115,7 +123,7 @@ function Donut({
             <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
               {centerLabel}
             </span>
-            <span className="font-display text-2xl font-bold tabular-nums text-foreground">
+            <span className="font-sans text-2xl font-light tabular-nums text-foreground">
               {active !== undefined ? data[active]?.value.toLocaleString() : total.toLocaleString()}
             </span>
             {active !== undefined && (
@@ -170,35 +178,53 @@ function Donut({
 function WeeklyAverageChart({
   weekly,
   weeklyLegend,
-  weeklyAverage,
+  period,
 }: {
   weekly: DetectionWeeklyBar[];
   weeklyLegend: string[];
-  weeklyAverage: number;
+  period: string;
 }) {
-  const sources = weeklySourceNames(weeklyLegend);
-  const chartData = buildWeeklyChartData(weekly, weeklyLegend);
+  const visible = sliceWeeklyForPeriod(weekly, period);
+  const avg = weeklyAverageFromSeries(visible);
+  const sources = weeklySourceNames(weeklyLegend).slice(0, 3);
+  const chartData = buildWeeklyChartData(visible, weeklyLegend).map((row) => ({
+    ...row,
+    label: `Day ${row.day}`,
+  }));
 
   return (
     <Card className="module-panel p-6 shadow-none">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-foreground">Weekly Average</p>
-        <span className="text-sm font-bold text-foreground">{weeklyAverage} Alerts</span>
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Daily alert volume</p>
+          <p className="text-[11px] text-muted-foreground">
+            Last {visible.length} days · stacked by source
+          </p>
+        </div>
+        <span className="text-sm font-light tabular-nums text-foreground">
+          ~{avg}/day
+        </span>
       </div>
-      <div className="mt-6 h-44">
+      <div className="mt-5 h-44">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} barCategoryGap={2}>
-            <XAxis dataKey="day" hide />
+          <BarChart data={chartData} barCategoryGap="18%">
+            <XAxis
+              dataKey="day"
+              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+              tickLine={false}
+              axisLine={false}
+              interval={visible.length > 14 ? 2 : 0}
+            />
             <Tooltip
-              cursor={{ fill: "hsl(var(--muted))" }}
+              cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
               contentStyle={CHART_TOOLTIP_STYLE}
               labelStyle={{ color: "hsl(var(--popover-foreground))" }}
               itemStyle={{ color: "hsl(var(--popover-foreground))" }}
-              labelFormatter={(day) => `Day ${day}`}
-              formatter={(value: number, name: string) => [
-                value.toLocaleString(),
-                name,
-              ]}
+              labelFormatter={(_, payload) => {
+                const d = payload?.[0]?.payload?.day;
+                return d ? `Day ${d}` : "";
+              }}
+              formatter={(value: number, name: string) => [value.toLocaleString(), name]}
             />
             {sources.map((name, i) => (
               <Bar
@@ -207,17 +233,20 @@ function WeeklyAverageChart({
                 name={name}
                 stackId="s"
                 fill={WEEKLY_COLORS[i] ?? "#94a3b8"}
-                radius={i === sources.length - 1 ? [2, 2, 0, 0] : [0, 0, 0, 0]}
+                radius={i === sources.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                isAnimationActive
+                animationDuration={700}
+                animationBegin={i * 60}
               />
             ))}
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
         {sources.map((s, i) => (
           <span key={s} className="flex items-center gap-1.5">
             <span
-              className="h-2 w-2 rounded-full"
+              className="h-2 w-2 rounded-sm"
               style={{ background: WEEKLY_COLORS[i] ?? "#94a3b8" }}
             />
             {s}
@@ -230,10 +259,22 @@ function WeeklyAverageChart({
 
 export function DetectionPage() {
   const { data, isLoading, isError, refetch, isFetching } = useDetection();
+  const overview = useOverview();
+  const pipelineConfig = useInvestigationPipeline();
   const { timeFrom, timeTo } = useUi();
   const periodLabel = formatTimeRangeShort(timeFrom, timeTo);
+  const pipeline = useMemo(
+    () =>
+      overview.data
+        ? buildOverviewPipeline(overview.data, periodLabel, pipelineConfig.data)
+        : null,
+    [overview.data, periodLabel, pipelineConfig.data]
+  );
+  const [tab, setTab] = useState<PageTab>("intelligence");
+  const [coverageTab, setCoverageTab] = useState<"coverage" | "escalation">("coverage");
 
   const total = data?.totalAlerts ?? 0;
+  const chartPeriod = data?.period ?? rangeCodeFromTimestamps(timeFrom, timeTo);
 
   return (
     <motion.div
@@ -246,87 +287,137 @@ export function DetectionPage() {
         accent="cyan"
         section="Detection"
         title="Alert Intelligence"
-        description="Category and severity breakdowns, source coverage, and a Wazuh-style timeline brush — all scoped to your selected window."
+        description="Category and severity breakdowns, investigation coverage treemap, and AI-driven threat hunt — scoped to your selected window."
         stats={[
-          { label: "Period", value: periodLabel, accent: "#F59E0B" },
-          { label: "Total alerts", value: total > 0 ? total.toLocaleString() : "—", accent: "#22D3EE" },
+          { label: "Period", value: periodLabel, accent: "#FFC107" },
+          { label: "Total alerts", value: total > 0 ? total.toLocaleString() : "—", accent: "#6B5CE7" },
         ]}
         badges={<ModuleLiveBadge live />}
       />
 
-      <ModulePanel className="overflow-hidden p-0">
-        <AlertTimeTimeline />
-      </ModulePanel>
+      <div className="flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
+        {(
+          [
+            ["intelligence", "Alert Intelligence"],
+            ["hunt", "Threat Hunt"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            className={cn(
+              "seven-tab-enter flex-1 rounded-md px-4 py-2 text-sm font-medium transition",
+              tab === id
+                ? "bg-card text-foreground shadow-seven-card"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-      {isError && (
-        <ErrorState message="Failed to load detection intelligence." onRetry={() => refetch()} />
+      {tab === "hunt" ? (
+        <ThreatHuntPanel />
+      ) : (
+        <>
+          <ModulePanel className="overflow-hidden p-0">
+            <AlertTimeTimeline />
+          </ModulePanel>
+
+          {isError && (
+            <ErrorState message="Failed to load detection intelligence." onRetry={() => refetch()} />
+          )}
+
+          {!isError && (isLoading || !data) ? (
+            <CardSkeletonGrid count={3} />
+          ) : !isError && data ? (
+            <>
+              <div className="grid gap-6 lg:grid-cols-3">
+                <Donut
+                  title="Categories"
+                  data={data.categories}
+                  centerLabel="Total Alerts"
+                  total={total}
+                />
+                <Donut
+                  title="Severities"
+                  data={normalizeSeverityColors(data.severities)}
+                  centerLabel="Total Alerts"
+                  total={total}
+                />
+                <WeeklyAverageChart
+                  weekly={data.weekly}
+                  weeklyLegend={data.weeklyLegend}
+                  period={chartPeriod}
+                />
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-3">
+                <Card className="module-panel col-span-2 p-5 shadow-none">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex gap-4">
+                      {(["coverage", "escalation"] as const).map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setCoverageTab(t)}
+                          className={cn(
+                            "text-sm font-semibold capitalize transition",
+                            coverageTab === t
+                              ? "text-foreground"
+                              : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {t === "coverage" ? "Investigation Coverage" : "Escalation"}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {total.toLocaleString()} alerts · {periodLabel}
+                    </span>
+                  </div>
+                  {coverageTab === "coverage" ? (
+                    <InvestigationCoverageTreemap />
+                  ) : pipeline ? (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="rounded-xl border border-red-200/60 bg-red-50/50 p-5 dark:bg-red-950/20">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-red-600">
+                          Escalated to incidents
+                        </p>
+                        <p className="mt-2 font-sans text-5xl font-light text-red-600">
+                          {pipeline.escalated}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          of {pipeline.reviewedAlerts.toLocaleString()} reviewed alerts
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-border bg-muted/30 p-5">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Auto-handled
+                        </p>
+                        <p className="mt-2 font-sans text-5xl font-light text-foreground">
+                          {pipeline.notEscalated.toLocaleString()}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {pipeline.falsePositivesClosed.toLocaleString()} FP closed before review
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+                </Card>
+
+                <Card className="module-panel flex min-h-[420px] flex-col p-5 shadow-none">
+                  <AlertSourceBreakdown sources={data.sources} total={total} />
+                </Card>
+              </div>
+            </>
+          ) : null}
+        </>
       )}
 
-      {!isError && (isLoading || !data) ? (
-        <CardSkeletonGrid count={3} />
-      ) : !isError && data ? (
-        <>
-          <div className="grid gap-6 lg:grid-cols-3">
-            <Donut
-              title="Categories"
-              data={data.categories}
-              centerLabel="Total Alerts"
-              total={total}
-            />
-            <Donut
-              title="Severities"
-              data={normalizeSeverityColors(data.severities)}
-              centerLabel="Total Alerts"
-              total={total}
-            />
-
-            <WeeklyAverageChart
-              weekly={data.weekly}
-              weeklyLegend={data.weeklyLegend}
-              weeklyAverage={data.weeklyAverage}
-            />
-          </div>
-
-          <Card className="module-panel p-6 shadow-none">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-foreground">Investigation Coverage</p>
-              <span className="text-sm text-muted-foreground">
-                {total.toLocaleString()} alerts · {periodLabel} window
-              </span>
-            </div>
-            <div className="mt-5 space-y-4">
-              {data.sources.map((s) => (
-                <div key={s.name}>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-foreground">
-                      {s.name}{" "}
-                      <span className="ml-1 text-xs font-normal text-muted-foreground">
-                        {s.tags}
-                      </span>
-                    </span>
-                    <span className="flex items-center gap-3">
-                      <span className="text-muted-foreground">
-                        {s.value.toLocaleString()} alerts
-                      </span>
-                      <span className="w-10 text-right font-semibold text-foreground">
-                        {s.pct}%
-                      </span>
-                    </span>
-                  </div>
-                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-secondary">
-                    <div
-                      className="h-full rounded-full bg-accent"
-                      style={{ width: `${s.pct}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </>
-      ) : null}
-
-      {isFetching && data && (
+      {isFetching && data && tab === "intelligence" && (
         <p className="text-center text-xs text-muted-foreground">Refreshing detection data…</p>
       )}
     </motion.div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   Activity,
+  GitBranch,
   KeyRound,
   ScrollText,
   Settings2,
@@ -19,8 +20,9 @@ import { DataSourceTab } from "./DataSourceTab";
 import { StatusTab } from "./StatusTab";
 import { AuditLogTab } from "./AuditLogTab";
 import { MaintenanceTab } from "./MaintenanceTab";
+import { InvestigationPipelineTab } from "./InvestigationPipelineTab";
 
-type AdminTab = "keys" | "users" | "data" | "audit" | "status" | "maintenance";
+type AdminTab = "keys" | "users" | "data" | "pipeline" | "audit" | "status" | "maintenance";
 
 const TABS: {
   id: AdminTab;
@@ -45,6 +47,12 @@ const TABS: {
     label: "Data Source",
     description: "Mock vs live upstream mode",
     icon: Settings2,
+  },
+  {
+    id: "pipeline",
+    label: "Investigation Pipeline",
+    description: "Sankey chart nodes, links, and summary metrics",
+    icon: GitBranch,
   },
   {
     id: "audit",
@@ -135,6 +143,7 @@ export function AdminPage() {
           {tab === "keys" && <ApiKeysTab />}
           {tab === "users" && <UsersTab />}
           {tab === "data" && <DataSourceTab />}
+          {tab === "pipeline" && <InvestigationPipelineTab />}
           {tab === "audit" && <AuditLogTab />}
           {tab === "status" && <StatusTab />}
           {tab === "maintenance" && <MaintenanceTab />}

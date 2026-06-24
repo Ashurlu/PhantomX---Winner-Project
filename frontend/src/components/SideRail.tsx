@@ -4,6 +4,7 @@ import {
   Gavel,
   Grid3X3,
   LayoutDashboard,
+  Radar,
   Settings2,
   ShieldHalf,
   Swords,
@@ -23,6 +24,7 @@ interface RailItem {
 const ITEMS: RailItem[] = [
   { to: "/overview", label: "Overview", icon: LayoutDashboard },
   { to: "/cases", label: "Cases", icon: FolderKanban },
+  { to: "/detection", label: "Detection", icon: Radar },
   { to: "/ai-court", label: "AI Court", icon: Gavel },
   { to: "/rules", label: "Recommended Rules", icon: ShieldHalf },
   { to: "/cramm", label: "CRAMM Table", icon: Grid3X3 },

@@ -182,27 +182,21 @@ class MockProvider:
     # ---- Case Management Inbox ----
     async def cases_inbox(self) -> list[dict]:
         await _jitter()
-        return _load("cases_inbox.json")
+        from .cases_store import list_inbox
+
+        return list_inbox()
 
     async def cases_inbox_case(self, case_id: str) -> dict | None:
         await _jitter()
-        for c in _load("cases_inbox.json"):
-            if c["id"] == case_id:
-                return c
-        return None
+        from .cases_store import get_case
+
+        return get_case(case_id)
 
     async def cases_inbox_stats(self) -> dict:
         await _jitter()
-        cases = _load("cases_inbox.json")
-        open_n = sum(1 for c in cases if c["status"] == "open")
-        prog = sum(1 for c in cases if c["status"] == "in_progress")
-        done = sum(1 for c in cases if c["status"] == "done")
-        return {
-            "open": open_n,
-            "inProgress": prog,
-            "done": done,
-            "total": len(cases),
-        }
+        from .cases_store import inbox_stats
+
+        return inbox_stats()
 
     # ---- Rules ----
     async def rules(self) -> list[dict]:

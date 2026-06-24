@@ -5,8 +5,12 @@ import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal
 
 MOCK_DIR = Path(__file__).resolve().parent.parent / "mock"
+
+ChatScope = Literal["all", "cases", "alerts", "rules", "detection"]
+ChatMode = Literal["auto", "search", "analyze", "hunt", "brief"]
 
 STOPWORDS = {
     "the", "and", "for", "that", "this", "with", "from", "about", "tell", "what",
@@ -20,7 +24,72 @@ SYNONYMS: dict[str, list[str]] = {
     "powershell": ["encoded", "ps1", "a-1042"],
     "phishing": ["bec", "wire", "ceo", "oauth"],
     "lateral": ["pass-the-hash", "pth", "lsass"],
+    "critical": ["sev1", "p1", "urgent"],
+    "open": ["in progress", "new", "unresolved"],
 }
+
+
+def parse_slash_command(message: str) -> tuple[str, ChatScope, ChatMode]:
+    """Parse /cases, /alerts, /hunt, /status, /brief etc."""
+    m = message.strip()
+    if not m.startswith("/"):
+        return message, "all", "auto"
+
+    parts = m.split(maxsplit=1)
+    cmd = parts[0].lower()
+    rest = parts[1].strip() if len(parts) > 1 else ""
+
+    mapping: dict[str, tuple[ChatScope, ChatMode, str]] = {
+        "/cases": ("cases", "search", rest or "open cases"),
+        "/alerts": ("alerts", "search", rest or "recent alerts"),
+        "/rules": ("rules", "search", rest or "pending rules"),
+        "/detection": ("detection", "analyze", rest or "alert breakdown"),
+        "/hunt": ("all", "hunt", rest or "suspicious activity"),
+        "/analyze": ("all", "analyze", rest or "incident trends"),
+        "/brief": ("all", "brief", rest or "SOC status"),
+        "/status": ("all", "brief", "platform status"),
+        "/help": ("all", "brief", "help"),
+    }
+    if cmd in mapping:
+        scope, mode, default_q = mapping[cmd]
+        return rest or default_q, scope, mode
+    return message, "all", "auto"
+
+
+def format_status_reply(time_range: str | None = None) -> str:
+    overview = _load("overview.json")
+    court = _load("ai_court_stats.json")
+    detection = _load("detection.json")
+    cases = _load("cases_inbox.json")
+    open_cases = sum(1 for c in cases if c["status"] in ("open", "in_progress"))
+    window = time_range or "24h"
+    return (
+        f"**SOC status** ({window})\n\n"
+        f"- **{overview['alerts']:,}** alerts · **{detection['totalAlerts']:,}** in detection view\n"
+        f"- **{overview['incidents']}** incidents (**{overview['incidentsOpen']}** open, "
+        f"**{overview['incidentsResolved']}** resolved)\n"
+        f"- **{overview['falsePositivesAutoClosed']:,}** false positives auto-closed\n"
+        f"- **{court['truePositivesShown']}** true positives in AI Court · **{open_cases}** cases in inbox\n"
+        f"- Automation: **{overview['handling']['automated']}%** automated handling\n\n"
+        "Try `/cases critical`, `/hunt powershell`, or ask in plain language."
+    )
+
+
+def format_help_reply() -> str:
+    return (
+        "**SOC Assistant commands**\n\n"
+        "Slash commands:\n"
+        "- `/status` — platform snapshot\n"
+        "- `/cases [query]` — search cases\n"
+        "- `/alerts [query]` — search AI Court alerts\n"
+        "- `/rules [query]` — detection rules\n"
+        "- `/detection` — alert intelligence summary\n"
+        "- `/hunt [IOC]` — threat hunt plan\n"
+        "- `/analyze [topic]` — deeper analysis\n"
+        "- `/brief [topic]` — short answer only\n\n"
+        "You can also ask naturally: severity filters, time windows (\"2 weeks ago\"), "
+        "hostnames, and case IDs (e.g. PX-C034463)."
+    )
 
 
 def _load(name: str):
@@ -123,6 +192,36 @@ def _collect_documents() -> list[dict]:
             }
         )
 
+    det = _load("detection.json")
+    for cat in det.get("categories", []):
+        docs.append(
+            {
+                "kind": "detection",
+                "id": cat["name"],
+                "title": f"{cat['name']} alerts",
+                "path": "/detection",
+                "severity": "",
+                "status": "category",
+                "createdAt": "",
+                "text": _expand_text(cat["name"], "category", "detection", str(cat.get("value", ""))),
+                "summary": f"{cat.get('value', 0):,} alerts in {cat['name']} category",
+            }
+        )
+    for src in det.get("sources", []):
+        docs.append(
+            {
+                "kind": "detection",
+                "id": src["name"],
+                "title": src["name"],
+                "path": "/detection",
+                "severity": "",
+                "status": "source",
+                "createdAt": "",
+                "text": _expand_text(src["name"], src.get("tags", ""), "source", "detection"),
+                "summary": f"{src.get('value', 0):,} alerts ({src.get('pct', 0)}%) from {src['name']}",
+            }
+        )
+
     return docs
 
 
@@ -138,11 +237,31 @@ def _weeks_ago_hint(query: str) -> int | None:
     return None
 
 
-def search_soc(query: str, limit: int = 5) -> list[dict]:
+def search_soc(
+    query: str,
+    limit: int = 5,
+    scope: ChatScope = "all",
+) -> list[dict]:
     tokens = _tokenize(query)
     weeks = _weeks_ago_hint(query)
     now = datetime.now(timezone.utc)
     docs = _collect_documents()
+
+    if scope == "cases":
+        docs = [d for d in docs if d["kind"] == "case"]
+    elif scope == "alerts":
+        docs = [d for d in docs if d["kind"] == "alert"]
+    elif scope == "rules":
+        docs = [d for d in docs if d["kind"] == "rule"]
+    elif scope == "detection":
+        docs = [d for d in docs if d["kind"] == "detection"]
+
+    q_lower = query.lower()
+    if "critical" in q_lower:
+        docs = [d for d in docs if str(d.get("severity", "")).lower() == "critical"] or docs
+    if "open" in q_lower and scope in ("all", "cases"):
+        docs = [d for d in docs if d.get("status") in ("open", "in_progress", "new")] or docs
+
     scored: list[tuple[int, dict]] = []
 
     for doc in docs:
@@ -175,8 +294,45 @@ def search_soc(query: str, limit: int = 5) -> list[dict]:
         if score > 0:
             scored.append((score, doc))
 
-    scored.sort(key=lambda x: (-x[0], {"case": 0, "alert": 1, "rule": 2}.get(x[1]["kind"], 9), x[1]["id"]))
+    scored.sort(key=lambda x: (-x[0], {"case": 0, "alert": 1, "rule": 2, "detection": 3}.get(x[1]["kind"], 9), x[1]["id"]))
     return [d for _, d in scored[:limit]]
+
+
+def citation_kind(doc: dict) -> str:
+    k = doc["kind"]
+    if k == "detection":
+        return "page"
+    return k
+
+
+def build_actions(hits: list[dict], context_path: str | None) -> list[dict]:
+    actions: list[dict] = []
+    seen: set[str] = set()
+    for h in hits[:4]:
+        path = h["path"]
+        if path in seen:
+            continue
+        seen.add(path)
+        actions.append(
+            {
+                "label": f"Open {h['kind']}: {h['id']}",
+                "path": path,
+                "kind": "navigate",
+            }
+        )
+    if context_path and context_path not in seen:
+        page_hints = {
+            "/detection": ("Alert Intelligence", "/detection"),
+            "/cases": ("Case Inbox", "/cases"),
+            "/ai-court": ("AI Court", "/ai-court"),
+            "/rules": ("Rules", "/rules"),
+            "/overview": ("Overview", "/overview"),
+        }
+        for prefix, (label, path) in page_hints.items():
+            if context_path.startswith(prefix):
+                actions.append({"label": f"Current page: {label}", "path": path, "kind": "navigate"})
+                break
+    return actions[:6]
 
 
 def build_context_block(max_chars: int = 12000) -> str:
@@ -227,6 +383,6 @@ def format_local_reply(query: str, hits: list[dict]) -> str:
 
     parts.append("")
     parts.append(
-        "_Tip: Add an **OpenRouter** key (`sk-or-v1-…`) and model (e.g. `openai/gpt-4o-mini`) in **Admin → API Keys**._"
+        "_Commands: `/status` · `/cases` · `/alerts` · `/hunt` · `/help` — or add an OpenRouter key in **Admin → API Keys**._"
     )
     return "\n".join(parts)
