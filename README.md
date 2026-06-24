@@ -396,13 +396,13 @@ This flexibility allows organizations to deploy PhantomX within cloud, hybrid, o
 
 ## Team
 
-| Member                 |
+| Members                 |
 | ---------------------- |
 | Zaur Mammadbayli       |
 | Nargiz Heydarli        |
-| Ali Karimov            |
+|Cavidan Ashurlu         |
 | Mahammadali Huseynzade |
-| Cavidan Ashurlu        |
+|  Ali Karimov           |
 | Elvin Mammadzada       |
 
 ---

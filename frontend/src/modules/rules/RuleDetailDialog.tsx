@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   CheckCircle2,
   Code2,
   Pencil,
   Save,
+  UserCheck,
   X,
   XCircle,
 } from "lucide-react";
@@ -131,14 +133,33 @@ function RuleBody({ data, onClose }: { data: RuleDetail; onClose: () => void }) 
     <>
       <DialogHeader>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-sm text-secondary">{data.id}</span>
+          <span className="text-mono-id text-sm">{data.id}</span>
           <SeverityBadge severity={editing ? form.severity : data.severity} />
           <StatusPill status={data.status} />
           <Badge variant="secondary" className="text-[10px]">
             {data.category === "ad" ? "Active Directory" : "Incident Response"}
           </Badge>
-          <span className="ml-auto font-mono text-xs text-muted-foreground">
-            from {data.sourceAlertId}
+          <span className="ml-auto flex flex-col items-end gap-1 font-mono text-xs text-muted-foreground">
+            {data.sourceAlertId && data.sourceAlertId !== "manual" ? (
+              <Link
+                to={`/ai-court?case=${encodeURIComponent(data.sourceAlertId)}`}
+                className="inline-flex items-center gap-1 text-accent hover:underline"
+                onClick={onClose}
+              >
+                from {data.sourceAlertId} →
+              </Link>
+            ) : (
+              <>manual rule</>
+            )}
+            {data.linkedCaseId ? (
+              <Link
+                to={`/cases?case=${encodeURIComponent(data.linkedCaseId)}`}
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+                onClick={onClose}
+              >
+                case {data.linkedCaseId} →
+              </Link>
+            ) : null}
           </span>
         </div>
         {editing ? (
@@ -225,9 +246,7 @@ function RuleBody({ data, onClose }: { data: RuleDetail; onClose: () => void }) 
               spellCheck={false}
             />
           ) : (
-            <pre className="overflow-x-auto rounded-lg border border-border/40 bg-[#0c0c14] p-4 font-mono text-xs leading-relaxed text-secondary">
-              {data.sigma}
-            </pre>
+            <pre className="code-panel">{data.sigma}</pre>
           )
         ) : editing ? (
           <Textarea
@@ -237,11 +256,40 @@ function RuleBody({ data, onClose }: { data: RuleDetail; onClose: () => void }) 
             spellCheck={false}
           />
         ) : (
-          <pre className="overflow-x-auto rounded-lg border border-border/40 bg-[#0c0c14] p-4 font-mono text-xs leading-relaxed text-secondary">
-            {data.kql || "— no KQL translation —"}
-          </pre>
+          <pre className="code-panel">{data.kql || "— no KQL translation —"}</pre>
         )}
       </div>
+
+      {/* Review audit */}
+      {data.reviewedBy && data.status !== "pending" && (
+        <div
+          className={`rounded-lg border p-3 ${
+            data.status === "approved"
+              ? "border-severity-resolved/30 bg-severity-resolved/5"
+              : "border-destructive/30 bg-destructive/5"
+          }`}
+        >
+          <p
+            className={`flex items-center gap-1.5 text-xs font-semibold uppercase ${
+              data.status === "approved" ? "text-severity-resolved" : "text-destructive"
+            }`}
+          >
+            <UserCheck className="h-3.5 w-3.5" />
+            {data.status === "approved" ? "Approved" : "Rejected"} by {data.reviewedBy}
+          </p>
+          {data.reviewedAt && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {new Date(data.reviewedAt).toLocaleString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Reject reason display */}
       {data.status === "rejected" && data.rejectReason && !rejecting && (

@@ -6,8 +6,11 @@ export function Toaster(props: ToasterProps) {
   return (
     <Sonner
       theme="dark"
-      position="top-right"
+      position="bottom-right"
+      offset={88}
+      visibleToasts={3}
       toastOptions={{
+        duration: 3500,
         classNames: {
           toast:
             "group toast glass !rounded-lg !border-border/50 !text-foreground",

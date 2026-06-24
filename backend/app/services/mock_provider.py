@@ -14,7 +14,14 @@ from pathlib import Path
 MOCK_DIR = Path(__file__).resolve().parent.parent / "mock"
 
 # Scaling factors so the time-range selector visibly changes the telemetry.
-_RANGE_FACTORS = {"24h": 1.0, "7d": 6.6, "30d": 27.0}
+_RANGE_FACTORS = {
+    "15m": 15 / (24 * 60),
+    "1h": 1 / 24,
+    "24h": 1.0,
+    "7d": 6.6,
+    "30d": 27.0,
+    "90d": 81.0,
+}
 
 
 def _load(name: str):
@@ -25,6 +32,63 @@ def _load(name: str):
 async def _jitter():
     """Add 100-400ms latency so frontend loading states feel real."""
     await asyncio.sleep(random.uniform(0.1, 0.4))
+
+
+def _generic_cramm_detail(item: dict) -> dict:
+    score = int(item["riskScore"] * 10)
+    ale = int(item["riskScore"] * 12000)
+    return {
+        "id": item["id"],
+        "techniqueId": item["techniqueId"],
+        "title": item["title"],
+        "subtitle": item["title"],
+        "description": item["description"],
+        "severity": item["severity"],
+        "severityLabel": item["severity"].upper(),
+        "mitreId": item["techniqueId"],
+        "crammLevel": item["crammLevel"],
+        "riskScore": score,
+        "riskScoreLabel": "ELEVATED" if score > 80 else "MODERATE+",
+        "annualLoss": ale,
+        "annualLossLabel": f"${ale // 1000}k / YEAR",
+        "resolutionWindow": "08:00:00",
+        "systemId": f"{item['techniqueId'].replace('.', '')}-CRAMM",
+        "asset": {
+            "name": "enterprise-ad",
+            "assetValue": item["crammLevel"] + 3,
+            "principalName": "CORP\\service-account",
+            "domainPath": "CORP.LOCAL",
+            "privilegeLevel": "Domain User",
+            "note": "Synthetic asset context for demo matrix entry.",
+        },
+        "assessment": {
+            "model": "CRAMM 5.1",
+            "standard": "ISO 27005",
+            "assetValue": item["crammLevel"] + 3,
+            "assetValueNote": "Service Significance",
+            "threatDegree": min(10, item["crammLevel"] + 4),
+            "threatDegreeNote": "Prevalence Index",
+            "exposureFactor": 2,
+            "exposureFactorNote": "Detection Gap",
+            "criticalityPct": min(95, int(item["riskScore"] * 10)),
+            "vectors": [
+                {"label": "Threat Prevalence", "pct": min(95, int(item["riskScore"] * 10)), "tone": "rose"},
+                {"label": "Detection Coverage", "pct": 55, "tone": "cyan"},
+                {"label": "Blast Radius", "pct": 48, "tone": "amber"},
+            ],
+            "enterpriseAle": ale,
+        },
+        "controls": [
+            {
+                "id": "C-01",
+                "title": f"Mitigate {item['title']}",
+                "description": "Apply MITRE mitigation controls and validate detection rules in SIEM.",
+                "priority": "high",
+            }
+        ],
+        "linkedCaseId": None,
+        "linkedAlertId": None,
+    }
 
 
 class MockProvider:
@@ -71,6 +135,31 @@ class MockProvider:
         kpi["eventsSpark"] = [round(v * f, 1) for v in kpi["eventsSpark"]]
         return data
 
+    # ---- Detection ----
+    async def detection(self, time_range: str = "24h") -> dict:
+        await _jitter()
+        data = _load("detection.json")
+        f = _RANGE_FACTORS.get(time_range, 1.0)
+        data = json.loads(json.dumps(data))  # deep copy
+        data["period"] = time_range
+
+        def s(x: float) -> int:
+            return int(round(x * f))
+
+        data["totalAlerts"] = s(data["totalAlerts"])
+        data["weeklyAverage"] = s(data["weeklyAverage"])
+        for row in data["categories"]:
+            row["value"] = s(row["value"])
+        for row in data["severities"]:
+            row["value"] = s(row["value"])
+        for row in data["sources"]:
+            row["value"] = s(row["value"])
+        for row in data["weekly"]:
+            row["a"] = s(row["a"])
+            row["b"] = s(row["b"])
+            row["c"] = s(row["c"])
+        return data
+
     # ---- AI Court ----
     async def ai_court_stats(self, time_range: str = "24h") -> dict:
         await _jitter()
@@ -89,6 +178,25 @@ class MockProvider:
         await _jitter()
         details = _load("ai_court_case_details.json")
         return details.get(alert_id)
+
+    # ---- Case Management Inbox ----
+    async def cases_inbox(self) -> list[dict]:
+        await _jitter()
+        from .cases_store import list_inbox
+
+        return list_inbox()
+
+    async def cases_inbox_case(self, case_id: str) -> dict | None:
+        await _jitter()
+        from .cases_store import get_case
+
+        return get_case(case_id)
+
+    async def cases_inbox_stats(self) -> dict:
+        await _jitter()
+        from .cases_store import inbox_stats
+
+        return inbox_stats()
 
     # ---- Rules ----
     async def rules(self) -> list[dict]:
@@ -124,6 +232,8 @@ class MockProvider:
             "kql": payload.get("kql", ""),
             "proposedAt": datetime.now(timezone.utc).isoformat(),
             "rejectReason": None,
+            "reviewedBy": None,
+            "reviewedAt": None,
         }
         self._rules.append(rule)
         return rule
@@ -141,20 +251,24 @@ class MockProvider:
                 rule[key] = value
         return rule
 
-    async def approve_rule(self, rule_id: str) -> dict | None:
+    async def approve_rule(self, rule_id: str, actor: str | None = None) -> dict | None:
         rule = next((r for r in self._rules if r["id"] == rule_id), None)
         if rule is None:
             return None
         rule["status"] = "approved"
         rule["rejectReason"] = None
+        rule["reviewedBy"] = actor
+        rule["reviewedAt"] = datetime.now(timezone.utc).isoformat()
         return rule
 
-    async def reject_rule(self, rule_id: str, reason: str) -> dict | None:
+    async def reject_rule(self, rule_id: str, reason: str, actor: str | None = None) -> dict | None:
         rule = next((r for r in self._rules if r["id"] == rule_id), None)
         if rule is None:
             return None
         rule["status"] = "rejected"
         rule["rejectReason"] = reason
+        rule["reviewedBy"] = actor
+        rule["reviewedAt"] = datetime.now(timezone.utc).isoformat()
         return rule
 
     # ---- Pentest ----
@@ -397,6 +511,34 @@ class MockProvider:
     async def coverage(self) -> list[dict]:
         await _jitter()
         return _load("attack_coverage.json")
+
+    # ---- CRAMM ----
+    async def cramm_matrix(self) -> dict:
+        await _jitter()
+        return _load("cramm.json")
+
+    async def cramm_detail(self, technique_id: str) -> dict | None:
+        await _jitter()
+        details = _load("cramm_details.json")
+        if technique_id in details:
+            return details[technique_id]
+        matrix = _load("cramm.json")
+        for item in matrix["critical"] + matrix["high"]:
+            if item["id"] == technique_id:
+                return _generic_cramm_detail(item)
+        return None
+
+    async def cramm_audit(self) -> dict:
+        await _jitter()
+        return _load("cramm_audit.json")
+
+    async def cramm_export(self) -> dict:
+        await _jitter()
+        return {
+            "generatedAt": datetime.now(timezone.utc).isoformat(),
+            "matrix": _load("cramm.json"),
+            "audit": _load("cramm_audit.json"),
+        }
 
     # ---- Maintenance ----
     async def reset_demo(self) -> None:

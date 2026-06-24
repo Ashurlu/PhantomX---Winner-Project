@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/States";
 import { toast } from "@/components/ui/sonner";
 import { useAdminSettings, useUpdateSettings } from "@/lib/api";
+import { AdminTabLoader } from "./AdminTabLoader";
 import type { AdminSettings } from "@/lib/types";
 
 type KeyForm = Omit<AdminSettings, "dataSource">;
@@ -21,8 +22,8 @@ const FIELDS: {
   { key: "n8nApiKey", label: "n8n API Key", placeholder: "n8n_api_…", secret: true },
   { key: "pentestBaseUrl", label: "Pentest Tool Base URL", placeholder: "https://pentest.yourorg.com", secret: false },
   { key: "pentestApiKey", label: "Pentest Tool API Key", placeholder: "pt_…", secret: true },
-  { key: "aiProviderKey", label: "AI Provider Key", placeholder: "sk-ant-… / sk-…", secret: true },
-  { key: "aiModel", label: "AI Analysis Model", placeholder: "claude-sonnet-4-6 (default)", secret: false },
+  { key: "aiProviderKey", label: "AI Provider Key", placeholder: "sk-or-v1-… (OpenRouter)", secret: true },
+  { key: "aiModel", label: "AI Analysis Model", placeholder: "openai/gpt-4o-mini or anthropic/claude-sonnet-4", secret: false },
   { key: "winrmUsername", label: "WinRM Username (remote targets)", placeholder: "Administrator", secret: false },
   { key: "winrmPassword", label: "WinRM Password (remote targets)", placeholder: "••••••••", secret: true },
 ];
@@ -43,6 +44,8 @@ export function ApiKeysTab() {
 
   if (isError) return <ErrorState message="Failed to load settings." onRetry={() => refetch()} />;
 
+  const waiting = isLoading || !form;
+
   const save = async () => {
     if (!form) return;
     try {
@@ -54,6 +57,7 @@ export function ApiKeysTab() {
   };
 
   return (
+    <AdminTabLoader>
     <div className="grid gap-5 lg:grid-cols-3">
       <Card className="lg:col-span-2">
         <CardHeader>
@@ -62,7 +66,7 @@ export function ApiKeysTab() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {isLoading || !form ? (
+          {waiting ? (
             Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)
           ) : (
             <>
@@ -116,11 +120,27 @@ export function ApiKeysTab() {
           </p>
           <p>
             These power the live integrations: <span className="text-foreground">n8n</span> for
-            AI Court &amp; Recommended Rules, and the <span className="text-foreground">pentest tool</span> REST
-            API. Set them, then flip <span className="text-foreground">Data Source → live</span>.
+            AI Court &amp; Recommended Rules, the <span className="text-foreground">pentest tool</span> REST
+            API, and the <span className="text-foreground">SOC Assistant</span> chatbot.
+          </p>
+          <p>
+            For <span className="text-foreground">OpenRouter</span>, paste your{" "}
+            <span className="text-foreground">sk-or-v1-…</span> key and a model id like{" "}
+            <span className="text-foreground">openai/gpt-4o-mini</span> or{" "}
+            <span className="text-foreground">anthropic/claude-sonnet-4</span> (see{" "}
+            <a
+              href="https://openrouter.ai/models"
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary underline-offset-2 hover:underline"
+            >
+              openrouter.ai/models
+            </a>
+            ).
           </p>
         </CardContent>
       </Card>
     </div>
+    </AdminTabLoader>
   );
 }

@@ -1,32 +1,21 @@
 # Python
 backend/.venv/
-.venv/
 __pycache__/
 *.pyc
-*.pyo
 backend/.env
-backend/app/data/
-.runtime/
-results/
+backend/app/data/*.db
+backend/app/data/avatars/
+.env.prod
 
 # Node
 frontend/node_modules/
 frontend/dist/
 frontend/.env
-node_modules/
-
-# AGI Engine runtime
-atomics/
-*.log
-_engine.log
-.env
-.env.example
 
 # Misc
 .DS_Store
-graphify-out/
+*.log
+.claude/
 graphify/
-%TEMP%*
-%file%
-hello.txt
-agi-pentest.txt
+graphify-out/
+.cursor/

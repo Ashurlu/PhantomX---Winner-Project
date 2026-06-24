@@ -1,0 +1,13 @@
+graphify/
+graphify-out/
+*.md
+*.html
+*.svg
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.txt
+*.yml
+*.yaml
+public/

@@ -17,7 +17,13 @@ async def login(body: LoginRequest):
     token = create_token(body.username, role)
     db.touch_login(body.username)
     db.add_audit(body.username, "auth.login", f"role={role}")
-    return LoginResponse(token=token, role=role, username=body.username)
+    profile = db.get_user(body.username)
+    return LoginResponse(
+        token=token,
+        role=role,
+        username=body.username,
+        avatarUrl=profile.get("avatarUrl") if profile else None,
+    )
 
 
 @router.post("/signup", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
@@ -29,7 +35,12 @@ async def signup(body: SignupRequest):
         raise HTTPException(status_code=422, detail="Password must be at least 6 characters")
 
     # New accounts are analysts; an admin promotes them later (defense in depth).
-    created = db.create_user(username, body.password, role="analyst")
+    try:
+        created = db.create_user(username, body.password, role="analyst")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     if created is None:
         raise HTTPException(status_code=409, detail="Username already taken")
 
@@ -37,4 +48,10 @@ async def signup(body: SignupRequest):
     db.touch_login(username)
     db.add_audit(username, "auth.signup", "self-registered as analyst")
     token = create_token(username, "analyst")
-    return LoginResponse(token=token, role="analyst", username=username)
+    profile = db.get_user(username)
+    return LoginResponse(
+        token=token,
+        role="analyst",
+        username=username,
+        avatarUrl=profile.get("avatarUrl") if profile else None,
+    )

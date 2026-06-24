@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   CheckCircle2,
   Clock,
   Network,
   ShieldAlert,
   ShieldHalf,
+  UserCheck,
   XCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/States";
+import { ModuleHero, ModulePanel, ModuleStatTile } from "@/components/module";
 import { useRules } from "@/lib/api";
 import { useAuth } from "@/store/auth";
 import { RuleDetailDialog } from "./RuleDetailDialog";
@@ -53,31 +56,40 @@ export function RulesPage() {
   const isAdmin = useAuth((s) => s.role === "admin");
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<RuleCategory>("incident-response");
+  const [params] = useSearchParams();
+
+  useEffect(() => {
+    const r = params.get("rule");
+    if (r) setSelected(r);
+  }, [params]);
 
   const irRules = data?.filter((r) => r.category === "incident-response") ?? [];
   const adRules = data?.filter((r) => r.category === "ad") ?? [];
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="flex items-center gap-2 font-display text-xl font-bold">
-            <ShieldHalf className="h-5 w-5 text-primary" />
-            Recommended Sigma Rules
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Proposed by the n8n AI nodes from true-positive alerts · approved by hand
-          </p>
-        </div>
-        {isAdmin ? (
-          <NewRuleDialog defaultCategory={tab} />
-        ) : (
-          <Badge variant="outline" className="text-xs">
-            Read-only (analyst)
-          </Badge>
-        )}
-      </div>
+      <ModuleHero
+        accent="amber"
+        section="Detection Engineering"
+        title="Recommended Sigma Rules"
+        description="Proposed by the n8n AI nodes from true-positive alerts — reviewed and approved by your team."
+        stats={[
+          { label: "IR rules", value: irRules.length, accent: "#F59E0B" },
+          { label: "AD rules", value: adRules.length, accent: "#8B5CF6" },
+          { label: "Total", value: data?.length ?? 0, accent: "#22D3EE" },
+        ]}
+        actions={
+          isAdmin ? (
+            <NewRuleDialog defaultCategory={tab} />
+          ) : (
+            <Badge variant="outline" className="text-xs">
+              Read-only (analyst)
+            </Badge>
+          )
+        }
+      />
 
+      <ModulePanel className="p-5">
       <Tabs value={tab} onValueChange={(v) => setTab(v as RuleCategory)}>
         <TabsList>
           <TabsTrigger value="incident-response" className="gap-2">
@@ -111,6 +123,7 @@ export function RulesPage() {
           />
         </TabsContent>
       </Tabs>
+      </ModulePanel>
 
       <RuleDetailDialog
         ruleId={selected}
@@ -182,6 +195,7 @@ function CategoryPanel({
                   <TableHead>Severity</TableHead>
                   <TableHead>Source Alert</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Reviewed by</TableHead>
                   <TableHead>Proposed</TableHead>
                 </TableRow>
               </TableHeader>
@@ -211,7 +225,7 @@ function RuleRow({ r, onOpen }: { r: RuleSummary; onOpen: () => void }) {
   const Icon = meta.icon;
   return (
     <TableRow className="cursor-pointer" onClick={onOpen}>
-      <TableCell className="font-mono text-xs text-secondary">{r.id}</TableCell>
+      <TableCell className="text-mono-id text-xs">{r.id}</TableCell>
       <TableCell className="font-medium">{r.title}</TableCell>
       <TableCell>
         <SeverityBadge severity={r.severity} />
@@ -225,6 +239,9 @@ function RuleRow({ r, onOpen }: { r: RuleSummary; onOpen: () => void }) {
           {meta.label}
         </span>
       </TableCell>
+      <TableCell>
+        <ReviewedByCell rule={r} />
+      </TableCell>
       <TableCell className="text-xs text-muted-foreground">
         {new Date(r.proposedAt).toLocaleDateString(undefined, {
           month: "short",
@@ -234,6 +251,32 @@ function RuleRow({ r, onOpen }: { r: RuleSummary; onOpen: () => void }) {
         })}
       </TableCell>
     </TableRow>
+  );
+}
+
+function ReviewedByCell({ rule }: { rule: RuleSummary }) {
+  if (rule.status === "pending" || !rule.reviewedBy) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  const verb = rule.status === "approved" ? "Approved" : "Rejected";
+  const color = rule.status === "approved" ? "text-severity-resolved" : "text-destructive";
+  return (
+    <span className={`flex flex-col gap-0.5 text-xs ${color}`}>
+      <span className="flex items-center gap-1 font-semibold">
+        <UserCheck className="h-3 w-3 shrink-0" />
+        {verb} by {rule.reviewedBy}
+      </span>
+      {rule.reviewedAt && (
+        <span className="text-[10px] text-muted-foreground">
+          {new Date(rule.reviewedAt).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -249,7 +292,7 @@ function SummaryCard({
   const meta = STATUS_META[status];
   const Icon = meta.icon;
   return (
-    <Card className="p-5">
+    <Card className="module-panel p-5 shadow-none">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
           <span className="text-xs uppercase tracking-wider text-muted-foreground">

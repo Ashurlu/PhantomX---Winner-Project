@@ -3,8 +3,17 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useAuth } from "@/store/auth";
-import { rangeCode, useUi } from "@/store/ui";
+import { useAuth, useAuthHydrated, useAdminQueryEnabled } from "@/store/auth";
+import { rangeCodeFromTimestamps, useUi } from "@/store/ui";
+import { detectionFallback } from "@/lib/detection-fallback";
+import { huntFallback } from "@/lib/hunt-fallback";
+import { casesInboxCaseFallback, casesInboxFallback } from "@/lib/cases-fallback";
+import {
+  searchTechniquesFallback,
+  tacticsFallback,
+  tacticsUsable,
+  techniquesFallback,
+} from "@/lib/pentest-fallback";
 import type {
   AdminSettings,
   AiCourtStats,
@@ -12,12 +21,19 @@ import type {
   AuditEntry,
   CaseDetail,
   CaseSummary,
+  InboxCase,
+  InboxCaseDetail,
+  CaseHistoryEvent,
+  InboxStats,
+  CaseAssignee,
   ConnectionTestResult,
   ConnTarget,
   CoverageEntry,
   CreateUserReq,
+  DetectionIntel,
   LoginResponse,
   Overview,
+  ProfileUpdateResponse,
   ProviderInfo,
   RuleCreate,
   RuleDetail,
@@ -30,6 +46,21 @@ import type {
   TechniqueSearchResult,
   TestSelection,
   UserOut,
+  UserProfile,
+  ChatResponse,
+  HuntResponse,
+  SocChatMode,
+  SocChatScope,
+  InvestigationPipelineConfig,
+  InvestigationPipelineUpdate,
+  CrammDetail,
+  CrammMatrix,
+  CrammAudit,
+  CrammExportReport,
+  WebPentestScanResult,
+  WebPentestSettings,
+  WebPentestSkill,
+  WebPentestMode,
 } from "./types";
 
 const BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
@@ -89,21 +120,141 @@ export async function signup(username: string, password: string) {
   });
 }
 
+// ---------- Profile ----------
+export function useProfile() {
+  const token = useAuth((s) => s.token);
+  return useQuery({
+    queryKey: ["profile", "me"],
+    queryFn: () => request<UserProfile>("/profile/me"),
+    enabled: !!token,
+    staleTime: 60_000,
+  });
+}
+
+export function useUploadAvatar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const token = useAuth.getState().token;
+      const form = new FormData();
+      form.append("file", file, file.name);
+      const res = await fetch(`${API}/profile/avatar`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form,
+      });
+      if (res.status === 401) {
+        useAuth.getState().logout();
+        throw new ApiError(401, "Session expired. Please log in again.");
+      }
+      if (!res.ok) {
+        let detail = `Upload failed (${res.status})`;
+        try {
+          const body = await res.json();
+          if (body?.detail) detail = typeof body.detail === "string" ? body.detail : detail;
+        } catch {
+          /* ignore */
+        }
+        throw new ApiError(res.status, detail);
+      }
+      return res.json() as Promise<UserProfile>;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["profile"] });
+      qc.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
+  });
+}
+
+export function useDeleteAvatar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      request<UserProfile>("/profile/avatar", {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["profile"] });
+      qc.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
+  });
+}
+
+export function useUpdateProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { username?: string; email?: string | null }) =>
+      request<ProfileUpdateResponse>("/profile/me", {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["profile"] });
+      qc.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
+  });
+}
+
+export function useChangeOwnPassword() {
+  return useMutation({
+    mutationFn: (body: { currentPassword: string; newPassword: string }) =>
+      request<void>("/profile/password", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+  });
+}
+
 // ---------- Overview ----------
 export function useOverview() {
-  const code = rangeCode(useUi((s) => s.timeRange));
+  const from = useUi((s) => s.timeFrom);
+  const to = useUi((s) => s.timeTo);
+  const code = rangeCodeFromTimestamps(from, to);
   return useQuery({
-    queryKey: ["overview", code],
+    queryKey: ["overview", code, from, to],
     queryFn: () => request<Overview>(`/overview?range=${code}`),
     refetchInterval: 15000,
   });
 }
 
+export function useInvestigationPipeline() {
+  const token = useAuth((s) => s.token);
+  return useQuery({
+    queryKey: ["investigation-pipeline"],
+    queryFn: () => request<InvestigationPipelineConfig>("/investigation-pipeline"),
+    enabled: !!token,
+    staleTime: 60_000,
+  });
+}
+
+// ---------- Detection ----------
+export function useDetection() {
+  const from = useUi((s) => s.timeFrom);
+  const to = useUi((s) => s.timeTo);
+  const code = rangeCodeFromTimestamps(from, to);
+  return useQuery({
+    queryKey: ["detection", code, from, to],
+    queryFn: async () => {
+      try {
+        return await request<DetectionIntel>(`/detection?range=${code}`);
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404) {
+          return detectionFallback(code);
+        }
+        throw e;
+      }
+    },
+    refetchInterval: 20000,
+  });
+}
+
 // ---------- AI Court ----------
 export function useAiCourtStats() {
-  const code = rangeCode(useUi((s) => s.timeRange));
+  const from = useUi((s) => s.timeFrom);
+  const to = useUi((s) => s.timeTo);
+  const code = rangeCodeFromTimestamps(from, to);
   return useQuery({
-    queryKey: ["ai-court", "stats", code],
+    queryKey: ["ai-court", "stats", code, from, to],
     queryFn: () => request<AiCourtStats>(`/ai-court/stats?range=${code}`),
   });
 }
@@ -112,6 +263,7 @@ export function useAiCourtCases() {
   return useQuery({
     queryKey: ["ai-court", "cases"],
     queryFn: () => request<CaseSummary[]>("/ai-court/cases"),
+    refetchInterval: 20000,
   });
 }
 
@@ -120,6 +272,114 @@ export function useAiCourtCase(alertId: string | null) {
     queryKey: ["ai-court", "case", alertId],
     queryFn: () => request<CaseDetail>(`/ai-court/cases/${alertId}`),
     enabled: !!alertId,
+  });
+}
+
+// ---------- Case Management Inbox ----------
+export function useCasesInbox() {
+  return useQuery({
+    queryKey: ["cases", "inbox"],
+    queryFn: async () => {
+      try {
+        return await request<InboxCase[]>("/cases/inbox");
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404) {
+          return casesInboxFallback();
+        }
+        throw e;
+      }
+    },
+    refetchInterval: 30000,
+  });
+}
+
+export function useCasesInboxCase(caseId: string | null) {
+  return useQuery({
+    queryKey: ["cases", "inbox", caseId],
+    queryFn: async () => {
+      try {
+        return await request<InboxCaseDetail>(`/cases/inbox/${caseId}`);
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404) {
+          return casesInboxCaseFallback(caseId!);
+        }
+        throw e;
+      }
+    },
+    enabled: !!caseId,
+    // Never show the previous case's detail while switching selection
+    placeholderData: undefined,
+  });
+}
+
+export function useCasesInboxStats() {
+  return useQuery({
+    queryKey: ["cases", "inbox", "stats"],
+    queryFn: () => request<InboxStats>("/cases/stats"),
+  });
+}
+
+export function useCaseAssignees() {
+  const token = useAuth((s) => s.token);
+  const hasHydrated = useAuthHydrated();
+  return useQuery({
+    queryKey: ["cases", "assignees"],
+    queryFn: () => request<CaseAssignee[]>("/cases/assignees"),
+    enabled: hasHydrated && !!token,
+    staleTime: 60_000,
+  });
+}
+
+export function useCreateCase() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: InboxCase & { historyEvent?: CaseHistoryEvent }) =>
+      request<InboxCaseDetail>("/cases/inbox", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["cases"] });
+    },
+  });
+}
+
+export function usePatchCase() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      caseId,
+      ...body
+    }: {
+      caseId: string;
+      status?: InboxCase["status"];
+      severity?: InboxCase["severity"];
+      assignee?: CaseAssignee | null;
+      unassign?: boolean;
+      flags?: number;
+      tasksDone?: number;
+      historyEvent?: CaseHistoryEvent;
+      note?: string;
+    }) =>
+      request<InboxCaseDetail>(`/cases/inbox/${encodeURIComponent(caseId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: (_data, vars) => {
+      void qc.invalidateQueries({ queryKey: ["cases"] });
+      void qc.invalidateQueries({ queryKey: ["cases", "inbox", vars.caseId] });
+    },
+  });
+}
+
+export function useDeleteCase() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (caseId: string) =>
+      request<void>(`/cases/inbox/${encodeURIComponent(caseId)}`, { method: "DELETE" }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["cases"] });
+    },
   });
 }
 
@@ -196,15 +456,34 @@ export function useRejectRule() {
 export function useTactics() {
   return useQuery({
     queryKey: ["pentest", "tactics"],
-    queryFn: () => request<Tactic[]>("/pentest/tactics"),
+    queryFn: async () => {
+      try {
+        const data = await request<Tactic[]>("/pentest/tactics");
+        return tacticsUsable(data) ? data : tacticsFallback();
+      } catch {
+        return tacticsFallback();
+      }
+    },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useTechniques(tactic: string | null) {
   return useQuery({
     queryKey: ["pentest", "techniques", tactic],
-    queryFn: () => request<Technique[]>(`/pentest/techniques?tactic=${tactic}`),
+    queryFn: async () => {
+      if (!tactic) return [];
+      try {
+        const data = await request<Technique[]>(
+          `/pentest/techniques?tactic=${encodeURIComponent(tactic)}`
+        );
+        return data.length ? data : techniquesFallback(tactic);
+      } catch {
+        return techniquesFallback(tactic);
+      }
+    },
     enabled: !!tactic,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -245,10 +524,17 @@ export function useProviders() {
 export function useTechniqueSearch(query: string) {
   return useQuery({
     queryKey: ["pentest", "search", query],
-    queryFn: () =>
-      request<TechniqueSearchResult[]>(
-        `/pentest/techniques/search?q=${encodeURIComponent(query)}`
-      ),
+    queryFn: async () => {
+      const q = query.trim();
+      try {
+        const data = await request<TechniqueSearchResult[]>(
+          `/pentest/techniques/search?q=${encodeURIComponent(q)}`
+        );
+        return data.length ? data : searchTechniquesFallback(q);
+      } catch {
+        return searchTechniquesFallback(q);
+      }
+    },
     enabled: query.trim().length >= 2,
   });
 }
@@ -290,9 +576,11 @@ export async function openRunReport(runId: string) {
 
 // ---------- Admin ----------
 export function useAdminSettings() {
+  const enabled = useAdminQueryEnabled();
   return useQuery({
     queryKey: ["admin", "settings"],
     queryFn: () => request<AdminSettings>("/admin/settings"),
+    enabled,
   });
 }
 
@@ -310,10 +598,50 @@ export function useUpdateSettings() {
   });
 }
 
+export function useAdminInvestigationPipeline() {
+  const enabled = useAdminQueryEnabled();
+  return useQuery({
+    queryKey: ["admin", "investigation-pipeline"],
+    queryFn: () => request<InvestigationPipelineConfig>("/admin/investigation-pipeline"),
+    enabled,
+  });
+}
+
+export function useUpdateInvestigationPipeline() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: InvestigationPipelineUpdate) =>
+      request<InvestigationPipelineConfig>("/admin/investigation-pipeline", {
+        method: "PUT",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "investigation-pipeline"] });
+      qc.invalidateQueries({ queryKey: ["investigation-pipeline"] });
+    },
+  });
+}
+
+export function useResetInvestigationPipeline() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      request<InvestigationPipelineConfig>("/admin/investigation-pipeline/reset", {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "investigation-pipeline"] });
+      qc.invalidateQueries({ queryKey: ["investigation-pipeline"] });
+    },
+  });
+}
+
 export function useUsers() {
+  const enabled = useAdminQueryEnabled();
   return useQuery({
     queryKey: ["admin", "users"],
     queryFn: () => request<UserOut[]>("/admin/users"),
+    enabled,
   });
 }
 
@@ -347,14 +675,17 @@ export function useSetUserActive() {
 }
 
 export function useCreateUser() {
-  const invalidate = useInvalidateAdmin();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: CreateUserReq) =>
       request<UserOut>("/admin/users", {
         method: "POST",
         body: JSON.stringify(body),
       }),
-    onSuccess: invalidate,
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["admin"] });
+      await qc.invalidateQueries({ queryKey: ["cases", "assignees"] });
+    },
   });
 }
 
@@ -382,17 +713,21 @@ export function useDeleteUser() {
 }
 
 export function useSystemStatus() {
+  const enabled = useAdminQueryEnabled();
   return useQuery({
     queryKey: ["admin", "status"],
     queryFn: () => request<SystemStatus>("/admin/status"),
+    enabled,
   });
 }
 
 export function useAuditLog() {
+  const enabled = useAdminQueryEnabled();
   return useQuery({
     queryKey: ["admin", "audit"],
     queryFn: () => request<AuditEntry[]>("/admin/audit"),
-    refetchInterval: 10000,
+    refetchInterval: enabled ? 10000 : false,
+    enabled,
   });
 }
 
@@ -414,6 +749,10 @@ export function useResetDemo() {
         method: "POST",
       }),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["overview"] });
+      qc.invalidateQueries({ queryKey: ["detection"] });
+      qc.invalidateQueries({ queryKey: ["ai-court"] });
+      qc.invalidateQueries({ queryKey: ["attack"] });
       qc.invalidateQueries({ queryKey: ["rules"] });
       qc.invalidateQueries({ queryKey: ["pentest"] });
       qc.invalidateQueries({ queryKey: ["admin"] });
@@ -463,4 +802,206 @@ export async function downloadNavigatorLayer() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+// ---------- Threat Hunt ----------
+export function useThreatHunt() {
+  return useMutation({
+    mutationFn: async (body: {
+      message: string;
+      history: { role: "user" | "assistant"; content: string }[];
+      time_range?: string;
+      context_path?: string;
+    }) => {
+      try {
+        return await request<HuntResponse>("/hunt", {
+          method: "POST",
+          body: JSON.stringify(body),
+        });
+      } catch (e) {
+        if (e instanceof ApiError && (e.status === 404 || e.status === 502)) {
+          return huntFallback(body.message, body.time_range);
+        }
+        throw e;
+      }
+    },
+  });
+}
+
+// ---------- SOC Chat ----------
+export function useSocChat() {
+  return useMutation({
+    mutationFn: (body: {
+      message: string;
+      history: { role: "user" | "assistant"; content: string }[];
+      mode?: SocChatMode;
+      scope?: SocChatScope;
+      context_path?: string;
+      time_range?: string;
+    }) =>
+      request<ChatResponse>("/chat", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+  });
+}
+
+// ---------- CRAMM ----------
+export function useCrammMatrix() {
+  return useQuery({
+    queryKey: ["cramm", "matrix"],
+    queryFn: () => request<CrammMatrix>("/cramm/matrix"),
+  });
+}
+
+export function useCrammDetail(techniqueId: string | undefined) {
+  return useQuery({
+    queryKey: ["cramm", "risk", techniqueId],
+    queryFn: () => request<CrammDetail>(`/cramm/risks/${techniqueId}`),
+    enabled: Boolean(techniqueId),
+  });
+}
+
+export function useCrammAudit(enabled = true) {
+  return useQuery({
+    queryKey: ["cramm", "audit"],
+    queryFn: () => request<CrammAudit>("/cramm/audit"),
+    enabled,
+  });
+}
+
+export function useCrammExport(enabled = true) {
+  return useQuery({
+    queryKey: ["cramm", "export"],
+    queryFn: () => request<CrammExportReport>("/cramm/export"),
+    enabled,
+  });
+}
+
+// ---------- Web Pentest Agent (mounted at /api/web-pentest) ----------
+const WEB_PENTEST_API = `${BASE}/api/web-pentest`;
+
+function parseApiDetail(body: unknown, fallback: string): string {
+  if (!body || typeof body !== "object") return fallback;
+  const detail = (body as { detail?: unknown }).detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail) && detail.length > 0) {
+    const first = detail[0] as { msg?: string };
+    if (first?.msg) return first.msg;
+  }
+  return fallback;
+}
+
+async function webPentestRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = useAuth.getState().token;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${WEB_PENTEST_API}${path}`, { ...options, headers });
+  if (res.status === 401) {
+    useAuth.getState().logout();
+    throw new ApiError(401, "Session expired");
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, parseApiDetail(body, res.statusText));
+  }
+  return res.json() as Promise<T>;
+}
+
+export function useWebPentestSkills() {
+  return useQuery({
+    queryKey: ["web-pentest", "skills"],
+    queryFn: () => webPentestRequest<WebPentestSkill[]>("/skills"),
+  });
+}
+
+export function useWebPentestSettings() {
+  return useQuery({
+    queryKey: ["web-pentest", "settings"],
+    queryFn: () => webPentestRequest<WebPentestSettings>("/settings"),
+  });
+}
+
+export async function updateWebPentestSettings(body: {
+  provider: string;
+  model: string;
+  api_key: string;
+}) {
+  return webPentestRequest<WebPentestSettings>("/settings", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function runWebPentestScan(body: {
+  target_url: string;
+  authorized: boolean;
+  mode: WebPentestMode;
+  scanType: "static" | "ai_planner" | "ai_agent";
+  max_steps?: number;
+}) {
+  const { scanType, max_steps, ...payload } = body;
+  const path =
+    scanType === "ai_agent"
+      ? "/agent-start"
+      : scanType === "ai_planner"
+        ? "/ai-start"
+        : "/start";
+  const reqBody =
+    scanType === "ai_agent"
+      ? { ...payload, max_steps: max_steps ?? 5 }
+      : payload;
+
+  const controller = new AbortController();
+  const timeoutMs = scanType === "ai_agent" ? 120_000 : 60_000;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await webPentestRequest<WebPentestScanResult>(path, {
+      method: "POST",
+      body: JSON.stringify(reqBody),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "AbortError") {
+      throw new ApiError(504, "Scan timed out. Try passive mode or fewer agent steps.");
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function generateWebPentestReport(
+  scan: WebPentestScanResult & { scanType?: string }
+) {
+  const isAgent = Boolean(scan.agent_steps?.length);
+  if (isAgent) {
+    return webPentestRequest<{ success: boolean; markdown: string }>("/agent-report", {
+      method: "POST",
+      body: JSON.stringify({
+        target_url: scan.target,
+        mode: scan.mode,
+        agent_steps: scan.agent_steps,
+        findings: scan.findings,
+        validated_findings: scan.validated_findings ?? [],
+        final_ai_summary: scan.final_ai_summary ?? "",
+        provider_used: scan.provider_used ?? "unknown",
+        model_used: scan.model_used ?? "unknown",
+      }),
+    });
+  }
+  return webPentestRequest<{ success: boolean; markdown: string }>("/report", {
+    method: "POST",
+    body: JSON.stringify({
+      target_url: scan.target,
+      mode: scan.mode,
+      findings: scan.findings,
+      skills_used: scan.skills_used ?? [],
+    }),
+  });
 }

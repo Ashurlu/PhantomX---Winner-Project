@@ -1,0 +1,203 @@
+/* ============================================================================
+   PhantomX — Brutalist-Editorial Design System (after the 7AI spec)
+   Square corners everywhere · black/ink/cream blocking · bold editorial
+   display · sage + gold accent-only · no shadows · no gradients · restrained
+   motion. Scoped under `.theme-refined`.
+   ========================================================================== */
+
+.theme-refined {
+  --black: #000000;
+  --ink: #1e1e1e;
+  --charcoal: #3c3c3c;
+  --white: #ffffff;
+  --cream: #f6f5f1;
+  --gray-light: #bcbcbc;
+  --gray-mid: #808080;
+  --sage: #9fb5ad;
+  --gold: #c9a74c;
+
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  background-color: var(--ink);
+  color: var(--white);
+  font-family: "Hanken Grotesk", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.theme-refined ::selection {
+  background: var(--sage);
+  color: var(--ink);
+}
+
+/* ---- Typography ---- */
+.theme-refined .rf-display {
+  font-family: "Bricolage Grotesque", "Space Grotesk", system-ui, sans-serif;
+  font-weight: 700;
+  font-variation-settings: "opsz" 72;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.theme-refined .rf-eyebrow {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  color: var(--gray-mid);
+}
+.theme-refined .rf-mono {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.theme-refined .rf-sage { color: var(--sage); }
+.theme-refined .rf-gold { color: var(--gold); }
+
+/* gold-underlined inline link / keyword */
+.theme-refined .rf-ul {
+  text-decoration: underline;
+  text-decoration-color: var(--gold);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 0.3s var(--ease);
+}
+.theme-refined .rf-ul:hover { text-decoration-color: var(--white); }
+
+/* ---- Section background blocks (strict alternation) ---- */
+.theme-refined .sec-black { background: var(--black); color: var(--white); }
+.theme-refined .sec-ink { background: var(--ink); color: var(--white); }
+.theme-refined .sec-white { background: var(--white); color: var(--ink); }
+.theme-refined .sec-cream { background: var(--cream); color: var(--ink); }
+.theme-refined .sec-white .rf-eyebrow,
+.theme-refined .sec-cream .rf-eyebrow { color: var(--gray-mid); }
+
+/* ---- Buttons (square, no radius) ---- */
+.theme-refined .rf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 0;
+  padding: 0.85rem 1.15rem;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.3s var(--ease), color 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+.theme-refined .rf-btn svg { transition: transform 0.3s var(--ease); }
+.theme-refined .rf-btn:hover svg { transform: translateX(3px); }
+
+.theme-refined .rf-btn-light {
+  background: var(--white);
+  color: var(--ink);
+}
+.theme-refined .rf-btn-light:hover { background: var(--sage); color: var(--ink); }
+
+.theme-refined .rf-btn-dark {
+  background: var(--ink);
+  color: var(--white);
+}
+.theme-refined .rf-btn-dark:hover { background: var(--charcoal); }
+
+.theme-refined .rf-btn-outline {
+  background: transparent;
+  color: currentColor;
+  border-color: currentColor;
+}
+.theme-refined .rf-btn-outline:hover { background: var(--white); color: var(--ink); }
+
+/* ---- Flat cards (square, hairline border, no shadow) ---- */
+.theme-refined .rf-card {
+  position: relative;
+  border-radius: 0;
+  border: 1px solid rgba(188, 188, 188, 0.22);
+  background: transparent;
+  transition: background 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+.theme-refined .sec-white .rf-card,
+.theme-refined .sec-cream .rf-card {
+  border-color: rgba(30, 30, 30, 0.16);
+}
+.theme-refined .rf-card-hover:hover { border-color: var(--sage); }
+
+/* ---- Divider ---- */
+.theme-refined .rf-rule {
+  height: 1px;
+  background: rgba(188, 188, 188, 0.28);
+}
+.theme-refined .sec-white .rf-rule,
+.theme-refined .sec-cream .rf-rule {
+  background: rgba(30, 30, 30, 0.16);
+}
+
+/* ---- Sticky feature tabs ---- */
+.theme-refined .rf-tab {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border-radius: 0;
+  padding: 1.1rem 1.25rem;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  transition: background 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+.theme-refined .rf-tab:hover { background: rgba(159, 181, 173, 0.1); }
+.theme-refined .rf-tab[data-active="true"] {
+  background: var(--sage);
+  color: var(--ink);
+  border-left-color: var(--ink);
+}
+.theme-refined .rf-tab[data-active="true"] .rf-eyebrow { color: rgba(30, 30, 30, 0.6); }
+
+/* ---- Marquee (kept, square) ---- */
+.theme-refined .rf-marquee {
+  display: flex;
+  gap: 3.5rem;
+  width: max-content;
+  animation: rf-marquee 28s linear infinite;
+}
+@keyframes rf-marquee { to { transform: translateX(-50%); } }
+
+/* ---- Browser-chrome frame (the one rounded exception, for mockups) ---- */
+.theme-refined .rf-frame {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(188, 188, 188, 0.25);
+  background: var(--cream);
+}
+
+/* ---- Focus ---- */
+.theme-refined a:focus-visible,
+.theme-refined button:focus-visible {
+  outline: 2px solid var(--sage);
+  outline-offset: 2px;
+}
+
+/* ---- Rotating hero word ---- */
+@keyframes rf-word-in {
+  from { opacity: 0; transform: translateY(0.6em); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.theme-refined .rf-word-anim {
+  animation: rf-word-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ---- Nav mega-menu ---- */
+.theme-refined .rf-nav-item:hover {
+  background: rgba(246, 245, 241, 0.85);
+}
+.theme-refined .nav-drop-right .rf-nav-drop {
+  left: auto;
+  right: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-refined .rf-marquee { animation: none !important; }
+  .theme-refined .rf-btn:hover svg { transform: none !important; }
+  .theme-refined .rf-word-anim { animation: none !important; }
+}

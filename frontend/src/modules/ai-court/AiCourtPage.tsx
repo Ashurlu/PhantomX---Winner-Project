@@ -1,52 +1,61 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Bot, Gavel, Scale, ShieldAlert } from "lucide-react";
+import { Bot, Gavel, ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SeverityBadge } from "@/components/SeverityBadge";
+import { ModuleHero, ModuleCoreBadge } from "@/components/module";
 import { Tribunal } from "@/three/Tribunal";
 import { ErrorState, LoadingState } from "@/components/States";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAiCourtCases, useAiCourtStats } from "@/lib/api";
+import { useAiCourtCases, useAiCourtStats, useCasesInbox } from "@/lib/api";
+import { CaseAssigneeBadge } from "./CaseAssigneeBadge";
+import { resolveAssignee } from "./ai-court-helpers";
+import { formatTimeRangeShort } from "@/lib/time-range";
 import { formatNumber } from "@/lib/utils";
+import { useUi } from "@/store/ui";
 import { CaseDetailDialog } from "./CaseDetailDialog";
-import type { CaseSummary } from "@/lib/types";
+import type { CaseAssignee, CaseSummary } from "@/lib/types";
 
 export function AiCourtPage() {
   const stats = useAiCourtStats();
   const cases = useAiCourtCases();
+  const inbox = useCasesInbox();
+  const { timeFrom, timeTo } = useUi();
+  const periodLabel = formatTimeRangeShort(timeFrom, timeTo);
   const [selected, setSelected] = useState<string | null>(null);
+  const [params] = useSearchParams();
+
+  useEffect(() => {
+    const c = params.get("case");
+    if (c) setSelected(c);
+  }, [params]);
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          icon={Gavel}
-          label="True Positives Shown"
-          value={stats.data ? String(stats.data.truePositivesShown) : "—"}
-          accent="#8B5CF6"
-          loading={stats.isLoading}
-        />
-        <StatCard
-          icon={Bot}
-          label="False Positives Auto-Closed"
-          value={stats.data ? formatNumber(stats.data.falsePositivesAutoClosed) : "—"}
-          accent="#22D3EE"
-          loading={stats.isLoading}
-          sub="never listed — only counted"
-        />
-        <StatCard
-          icon={Scale}
-          label="Period"
-          value={stats.data?.period ?? "—"}
-          accent="#F59E0B"
-          loading={stats.isLoading}
-        />
-      </div>
+      <ModuleHero
+        accent="violet"
+        section="AI Court"
+        title="Autonomous Adjudication Tribunal"
+        description="Prosecutor, defender, and judge agents debate evidence over true-positive alerts — rendering verdicts without flooding your inbox with noise."
+        badge={<ModuleCoreBadge>AI Core</ModuleCoreBadge>}
+        stats={[
+          {
+            label: "True positives",
+            value: stats.data ? String(stats.data.truePositivesShown) : "—",
+            accent: "#8B5CF6",
+          },
+          {
+            label: "FP auto-closed",
+            value: stats.data ? formatNumber(stats.data.falsePositivesAutoClosed) : "—",
+            accent: "#22D3EE",
+          },
+          { label: "Period", value: periodLabel, accent: "#F59E0B" },
+        ]}
+      />
 
       <div className="grid gap-6 lg:grid-cols-5">
-        {/* 3D Tribunal */}
-        <Card className="relative col-span-3 h-[440px] overflow-hidden p-0">
+        <Card className="module-panel accent-top relative col-span-3 h-[440px] overflow-hidden border-0 p-0 shadow-none">
           <div className="absolute inset-0">
             <Tribunal />
           </div>
@@ -68,7 +77,7 @@ export function AiCourtPage() {
         </Card>
 
         {/* Case feed */}
-        <Card className="col-span-2 flex h-[440px] flex-col p-0">
+        <Card className="module-panel accent-top col-span-2 flex h-[440px] flex-col border-0 p-0 shadow-none">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <ShieldAlert className="h-4 w-4 text-primary" />
@@ -87,7 +96,13 @@ export function AiCourtPage() {
               <ErrorState message="Failed to load cases." onRetry={() => cases.refetch()} />
             ) : (
               cases.data?.map((c, i) => (
-                <CaseRow key={c.alertId} c={c} index={i} onOpen={() => setSelected(c.alertId)} />
+                <CaseRow
+                  key={c.alertId}
+                  c={c}
+                  assignee={resolveAssignee(inbox.data, c)}
+                  index={i}
+                  onOpen={() => setSelected(c.alertId)}
+                />
               ))
             )}
           </CardContent>
@@ -105,10 +120,12 @@ export function AiCourtPage() {
 
 function CaseRow({
   c,
+  assignee,
   index,
   onOpen,
 }: {
   c: CaseSummary;
+  assignee: CaseAssignee | null;
   index: number;
   onOpen: () => void;
 }) {
@@ -121,61 +138,22 @@ function CaseRow({
       className="group flex w-full flex-col gap-1.5 rounded-lg border border-border/40 bg-background/40 p-3 text-left transition-all hover:border-primary/50 hover:bg-primary/5"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-mono text-xs text-secondary">{c.alertId}</span>
+        <span className="text-mono-id text-xs">{c.alertId}</span>
         <SeverityBadge severity={c.severity} />
       </div>
       <span className="text-sm font-medium leading-snug">{c.title}</span>
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-xs text-muted-foreground">
           {c.recommendationSummary}
         </span>
         <span className="font-mono text-xs font-semibold text-primary">
           {Math.round(c.confidence * 100)}%
         </span>
       </div>
-    </motion.button>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  accent,
-  sub,
-  loading,
-}: {
-  icon: typeof Bot;
-  label: string;
-  value: string;
-  accent: string;
-  sub?: string;
-  loading?: boolean;
-}) {
-  return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">
-            {label}
-          </span>
-          {loading ? (
-            <Skeleton className="h-9 w-20" />
-          ) : (
-            <span className="font-display text-3xl font-bold" style={{ color: accent }}>
-              {value}
-            </span>
-          )}
-          {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
-        </div>
-        <div
-          className="flex h-10 w-10 items-center justify-center rounded-lg"
-          style={{ background: `color-mix(in srgb, ${accent} 16%, transparent)` }}
-        >
-          <Icon className="h-5 w-5" style={{ color: accent }} />
-        </div>
+      <div className="flex items-center justify-end">
+        <CaseAssigneeBadge assignee={assignee} showLabel />
       </div>
-    </Card>
+    </motion.button>
   );
 }
 

@@ -76,6 +76,9 @@ class LiveProvider:
     async def overview(self, time_range: str = "24h") -> dict:
         return await mock_provider.overview(time_range)
 
+    async def detection(self, time_range: str = "24h") -> dict:
+        return await mock_provider.detection(time_range)
+
     async def ai_court_stats(self, time_range: str = "24h") -> dict:
         return await mock_provider.ai_court_stats(time_range)
 
@@ -85,6 +88,15 @@ class LiveProvider:
     async def ai_court_case(self, alert_id: str) -> dict | None:
         return await mock_provider.ai_court_case(alert_id)
 
+    async def cases_inbox(self) -> list[dict]:
+        return await mock_provider.cases_inbox()
+
+    async def cases_inbox_case(self, case_id: str) -> dict | None:
+        return await mock_provider.cases_inbox_case(case_id)
+
+    async def cases_inbox_stats(self) -> dict:
+        return await mock_provider.cases_inbox_stats()
+
     async def rules(self) -> list[dict]:
         return await mock_provider.rules()
 
@@ -93,6 +105,18 @@ class LiveProvider:
 
     async def coverage(self) -> list[dict]:
         return await mock_provider.coverage()
+
+    async def cramm_matrix(self) -> dict:
+        return await mock_provider.cramm_matrix()
+
+    async def cramm_detail(self, technique_id: str) -> dict | None:
+        return await mock_provider.cramm_detail(technique_id)
+
+    async def cramm_audit(self) -> dict:
+        return await mock_provider.cramm_audit()
+
+    async def cramm_export(self) -> dict:
+        return await mock_provider.cramm_export()
 
     async def reset_demo(self) -> None:
         self._runs.clear()
@@ -105,41 +129,98 @@ class LiveProvider:
     async def update_rule(self, rule_id: str, patch: dict) -> dict | None:
         return await mock_provider.update_rule(rule_id, patch)
 
-    async def approve_rule(self, rule_id: str) -> dict | None:
-        return await mock_provider.approve_rule(rule_id)
+    async def approve_rule(self, rule_id: str, actor: str | None = None) -> dict | None:
+        return await mock_provider.approve_rule(rule_id, actor=actor)
 
-    async def reject_rule(self, rule_id: str, reason: str) -> dict | None:
-        return await mock_provider.reject_rule(rule_id, reason)
+    async def reject_rule(self, rule_id: str, reason: str, actor: str | None = None) -> dict | None:
+        return await mock_provider.reject_rule(rule_id, reason, actor=actor)
 
     # ── Pentest engine ──────────────────────────────────────────────────────
     def _engine(self) -> PentestEngine:
         return engine_from_settings(db.get_settings())
 
     async def tactics(self) -> list[dict]:
-        groups = await self._engine().tactics()
-        return [
-            {
-                "id": g.get("id", ""),
-                "name": g.get("name", g.get("id", "")),
-                "techniqueCount": g.get(
-                    "technique_count", len(g.get("techniques", []))
-                ),
+        mock_tactics = await mock_provider.tactics()
+        mock_by_id = {t["id"]: t for t in mock_tactics}
+        try:
+            groups = await self._engine().tactics()
+        except PentestEngineError:
+            return mock_tactics
+
+        if not groups:
+            return mock_tactics
+
+        merged: dict[str, dict] = dict(mock_by_id)
+        for g in groups:
+            tid = (
+                g.get("id")
+                or g.get("tactic_id")
+                or g.get("tactic")
+                or ""
+            )
+            if not tid:
+                continue
+            name = g.get("name") or g.get("display_name") or merged.get(tid, {}).get("name", tid)
+            engine_count = g.get("technique_count") or g.get("techniqueCount")
+            if engine_count is None:
+                engine_count = len(g.get("techniques", []))
+            mock_count = merged.get(tid, {}).get("techniqueCount", 0)
+            merged[tid] = {
+                "id": tid,
+                "name": name,
+                "techniqueCount": max(int(engine_count), int(mock_count)),
             }
-            for g in groups
-        ]
+        return list(merged.values())
 
     async def techniques(self, tactic: str) -> list[dict]:
-        groups = await self._engine().tactics()
-        group = next((g for g in groups if g.get("id") == tactic), None)
-        if group is None:
-            return []
-        return [self._map_technique(t, tactic) for t in group.get("techniques", [])]
+        mock_list = await mock_provider.techniques(tactic)
+        mock_by_id = {t["id"]: t for t in mock_list}
+        try:
+            groups = await self._engine().tactics()
+            group = next(
+                (
+                    g
+                    for g in groups
+                    if (g.get("id") or g.get("tactic_id") or g.get("tactic"))
+                    == tactic
+                ),
+                None,
+            )
+            engine_mapped = [
+                self._map_technique(t, tactic) for t in (group or {}).get("techniques", [])
+            ]
+        except PentestEngineError:
+            return mock_list
+
+        if not engine_mapped:
+            return mock_list
+
+        merged = dict(mock_by_id)
+        for et in engine_mapped:
+            tid = et.get("id")
+            if not tid:
+                continue
+            # Prefer engine test metadata when available; keep mock shell otherwise.
+            if tid in merged and not et.get("tests"):
+                et = {**merged[tid], **et, "tests": merged[tid].get("tests", [])}
+            merged[tid] = et
+        return sorted(merged.values(), key=lambda t: t.get("id", ""))
 
     @staticmethod
     def _map_technique(t: dict, tactic: str) -> dict:
         tests = t.get("tests", [])
-        # Treat elevation-required tests as "blocked" for a standard user — a
-        # rough analogue of the mock blockedCount badge.
+        display = t.get("display_name", t.get("technique_id", ""))
+        if not tests:
+            tests = [
+                {
+                    "index": 0,
+                    "name": display,
+                    "platforms": ["windows"],
+                    "elevation_required": False,
+                    "domain_required": bool(t.get("domain_required")),
+                    "executor": "command_prompt",
+                }
+            ]
         blocked = sum(1 for ts in tests if ts.get("elevation_required"))
         return {
             "id": t.get("technique_id", ""),
@@ -231,7 +312,11 @@ class LiveProvider:
             if idx is None:
                 idx = _PREFERRED_INDEX.get(tech, 0)
             out.append(
-                {"technique_id": tech, "test_index": int(idx), "arg_overrides": {}}
+                {
+                    "technique_id": tech,
+                    "test_index": int(idx),
+                    "arg_overrides": s.get("arg_overrides") or {},
+                }
             )
         return out
 
@@ -456,7 +541,17 @@ class LiveProvider:
         return await self._engine().providers()
 
     async def search_techniques(self, q: str) -> list[dict]:
-        return await self._engine().search_techniques(q)
+        mock_hits = await mock_provider.search_techniques(q)
+        try:
+            engine_hits = await self._engine().search_techniques(q)
+        except PentestEngineError:
+            return mock_hits
+        if not engine_hits:
+            return mock_hits
+        by_id = {h["technique_id"]: h for h in mock_hits}
+        for h in engine_hits:
+            by_id[h["technique_id"]] = h
+        return list(by_id.values())
 
     async def analysis(self, run_id: str) -> dict | None:
         record = self._runs.get(run_id)

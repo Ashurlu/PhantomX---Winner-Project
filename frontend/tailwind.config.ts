@@ -11,8 +11,9 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        display: ["Space Grotesk", "system-ui", "sans-serif"],
-        sans: ["Inter", "system-ui", "sans-serif"],
+        display: ['"Inter"', '"Bricolage Grotesque"', "system-ui", "sans-serif"],
+        sans: ['"Inter"', '"Hanken Grotesk"', "system-ui", "sans-serif"],
+        label: ['"Space Grotesk"', "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
       },
       colors: {
@@ -50,11 +51,16 @@ const config: Config = {
           foreground: "hsl(var(--card-foreground))",
         },
         severity: {
-          critical: "#EF4444",
-          high: "#F97316",
-          medium: "#EAB308",
-          low: "#3B82F6",
-          resolved: "#10B981",
+          critical: "#E53935",
+          high: "#FF7043",
+          medium: "#FFC107",
+          low: "#4A7FD4",
+          resolved: "#2E8B6A",
+        },
+        chart: {
+          purple: "#6B5CE7",
+          teal: "#2E8B6A",
+          lavender: "#B8B0E8",
         },
       },
       borderRadius: {
@@ -79,12 +85,27 @@ const config: Config = {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-6px)" },
         },
+        "fade-slide-in": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "pulse-dot": {
+          "0%, 100%": { transform: "scale(1)", opacity: "1" },
+          "50%": { transform: "scale(1.35)", opacity: "0.65" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-glow": "pulse-glow 2.4s ease-in-out infinite",
         float: "float 4s ease-in-out infinite",
+        "fade-slide-in": "fade-slide-in 0.4s cubic-bezier(0, 0, 0.2, 1) both",
+        "pulse-dot": "pulse-dot 1.4s ease-in-out infinite",
+        shimmer: "shimmer 6s ease-in-out infinite",
       },
     },
   },

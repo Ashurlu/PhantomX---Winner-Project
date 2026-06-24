@@ -1,0 +1,9 @@
+# Merge for HTTPS: disables frontend host port (Caddy owns 80/443).
+#   docker compose -f docker-compose.prod.yml -f deploy/docker-compose.https.yml --env-file .env.prod up -d --build
+
+services:
+  frontend:
+    ports: []
+
+  caddy:
+    profiles: []

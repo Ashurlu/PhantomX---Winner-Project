@@ -1,0 +1,107 @@
+/** Investigation pipeline — matches 7AI Investigations Sankey (image 4). */
+
+export type SankeyNode = {
+  id: string;
+  label: string;
+  value: number;
+  column: number;
+  row: number;
+  color?: string;
+};
+
+export type SankeyLink = {
+  source: string;
+  target: string;
+  value: number;
+  color?: string;
+};
+
+export const SANKEY_COLUMNS = [
+  "Ingestion",
+  "Categorization",
+  "Enrichment",
+  "Agent Triage",
+  "Determination",
+  "Status",
+] as const;
+
+export const INVESTIGATION_SANKEY_NODES: SankeyNode[] = [
+  { id: "sentinel", label: "MSFT Sentinel", value: 55, column: 0, row: 0, color: "#9DC4E0" },
+  { id: "defender", label: "MSFT Defender", value: 35, column: 0, row: 1, color: "#7BB8E8" },
+  { id: "identity", label: "Identity", value: 28, column: 1, row: 0, color: "#C8D8E4" },
+  { id: "email", label: "Email", value: 32, column: 1, row: 1, color: "#C8D8E4" },
+  { id: "cloud", label: "Cloud", value: 18, column: 1, row: 2, color: "#C8D8E4" },
+  { id: "edr", label: "EDR", value: 12, column: 1, row: 3, color: "#C8D8E4" },
+  { id: "anon-ip", label: "Anonymous IP", value: 14, column: 2, row: 0, color: "#B8B0E8" },
+  { id: "malware-rbx", label: "Malware Roblox.exe", value: 11, column: 2, row: 1, color: "#B8B0E8" },
+  { id: "powershell", label: "Suspicious PowerShell", value: 16, column: 2, row: 2, color: "#B8B0E8" },
+  { id: "email-mal", label: "Email malware report", value: 22, column: 2, row: 3, color: "#B8B0E8" },
+  { id: "escalated", label: "Escalated", value: 29, column: 3, row: 0, color: "#E53935" },
+  { id: "not-esc", label: "Not Escalated", value: 61, column: 3, row: 1, color: "#90A4AE" },
+  { id: "malicious", label: "Malicious", value: 12, column: 4, row: 0, color: "#E53935" },
+  { id: "suspicious", label: "Suspicious", value: 9, column: 4, row: 1, color: "#FF7043" },
+  { id: "enriched", label: "Enriched for review", value: 5, column: 4, row: 2, color: "#6B5CE7" },
+  { id: "acceptable", label: "Acceptable Risk", value: 18, column: 4, row: 3, color: "#4A7FD4" },
+  { id: "benign", label: "Benign", value: 46, column: 4, row: 4, color: "#2E8B6A" },
+  { id: "open-crit", label: "Open (Critical)", value: 4, column: 5, row: 0, color: "#E53935" },
+  { id: "in-progress", label: "In Progress", value: 8, column: 5, row: 1, color: "#FFC107" },
+  { id: "closed", label: "Closed", value: 78, column: 5, row: 2, color: "#2E8B6A" },
+];
+
+export const INVESTIGATION_SANKEY_LINKS: SankeyLink[] = [
+  { source: "sentinel", target: "identity", value: 18, color: "#9DC4E0" },
+  { source: "sentinel", target: "email", value: 20, color: "#9DC4E0" },
+  { source: "sentinel", target: "cloud", value: 10, color: "#9DC4E0" },
+  { source: "sentinel", target: "edr", value: 7, color: "#9DC4E0" },
+  { source: "defender", target: "email", value: 12, color: "#7BB8E8" },
+  { source: "defender", target: "cloud", value: 8, color: "#7BB8E8" },
+  { source: "defender", target: "edr", value: 5, color: "#7BB8E8" },
+  { source: "defender", target: "identity", value: 10, color: "#7BB8E8" },
+  { source: "identity", target: "anon-ip", value: 14, color: "#C8D8E4" },
+  { source: "identity", target: "powershell", value: 14, color: "#C8D8E4" },
+  { source: "email", target: "email-mal", value: 22, color: "#C8D8E4" },
+  { source: "email", target: "malware-rbx", value: 10, color: "#C8D8E4" },
+  { source: "cloud", target: "anon-ip", value: 8, color: "#C8D8E4" },
+  { source: "edr", target: "powershell", value: 8, color: "#C8D8E4" },
+  { source: "edr", target: "malware-rbx", value: 4, color: "#C8D8E4" },
+  { source: "anon-ip", target: "escalated", value: 10, color: "#E53935" },
+  { source: "anon-ip", target: "not-esc", value: 12, color: "#90A4AE" },
+  { source: "malware-rbx", target: "escalated", value: 8, color: "#E53935" },
+  { source: "malware-rbx", target: "not-esc", value: 3, color: "#90A4AE" },
+  { source: "powershell", target: "escalated", value: 6, color: "#E53935" },
+  { source: "powershell", target: "not-esc", value: 10, color: "#90A4AE" },
+  { source: "email-mal", target: "escalated", value: 5, color: "#E53935" },
+  { source: "email-mal", target: "not-esc", value: 17, color: "#90A4AE" },
+  { source: "escalated", target: "malicious", value: 12, color: "#E53935" },
+  { source: "escalated", target: "suspicious", value: 9, color: "#FF7043" },
+  { source: "escalated", target: "enriched", value: 5, color: "#6B5CE7" },
+  { source: "escalated", target: "acceptable", value: 3, color: "#4A7FD4" },
+  { source: "not-esc", target: "acceptable", value: 15, color: "#4A7FD4" },
+  { source: "not-esc", target: "benign", value: 46, color: "#2E8B6A" },
+  { source: "malicious", target: "open-crit", value: 4, color: "#E53935" },
+  { source: "malicious", target: "in-progress", value: 5, color: "#FFC107" },
+  { source: "malicious", target: "closed", value: 3, color: "#2E8B6A" },
+  { source: "suspicious", target: "in-progress", value: 3, color: "#FFC107" },
+  { source: "suspicious", target: "closed", value: 6, color: "#2E8B6A" },
+  { source: "enriched", target: "in-progress", value: 5, color: "#FFC107" },
+  { source: "acceptable", target: "closed", value: 18, color: "#2E8B6A" },
+  { source: "benign", target: "closed", value: 46, color: "#2E8B6A" },
+];
+
+export const INVESTIGATION_METRICS = {
+  escalated: 29,
+  notEscalated: 61,
+  timeSaved: "12h 34m",
+  totalAlerts: 90,
+  sources: [
+    { name: "MSFT Sentinel", value: 55, pct: 61, color: "#6B5CE7" },
+    { name: "MSFT Defender", value: 35, pct: 39, color: "#4A7FD4" },
+  ],
+  determinations: [
+    { name: "Malicious", value: 12, pct: 13, color: "#E53935" },
+    { name: "Suspicious", value: 9, pct: 10, color: "#FF7043" },
+    { name: "Enriched for review", value: 5, pct: 6, color: "#6B5CE7" },
+    { name: "Acceptable Risk", value: 18, pct: 20, color: "#4A7FD4" },
+    { name: "Benign", value: 46, pct: 51, color: "#2E8B6A" },
+  ],
+};

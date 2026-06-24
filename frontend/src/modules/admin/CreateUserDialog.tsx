@@ -10,7 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
-import { useCreateUser } from "@/lib/api";
+import { ApiError, useCreateUser } from "@/lib/api";
+
+const USERNAME_RE = /^[a-zA-Z0-9_-]{3,32}$/;
 
 export function CreateUserDialog() {
   const create = useCreateUser();
@@ -26,8 +28,11 @@ export function CreateUserDialog() {
   };
 
   const submit = async () => {
-    if (username.trim().length < 3) {
-      toast.error("Username too short", { description: "At least 3 characters." });
+    const name = username.trim();
+    if (!USERNAME_RE.test(name)) {
+      toast.error("Invalid username", {
+        description: "Use 3–32 characters: letters, numbers, - or _ only.",
+      });
       return;
     }
     if (password.length < 6) {
@@ -35,12 +40,23 @@ export function CreateUserDialog() {
       return;
     }
     try {
-      const u = await create.mutateAsync({ username: username.trim(), password, role });
+      const u = await create.mutateAsync({ username: name, password, role });
       toast.success(`User ${u.username} created`, { description: `Role: ${u.role}` });
       reset();
       setOpen(false);
     } catch (e) {
-      toast.error("Could not create user", { description: String((e as Error).message) });
+      const msg =
+        e instanceof ApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "Unknown error";
+      toast.error("Could not create user", {
+        description:
+          msg.includes("404") || msg.includes("Failed to fetch")
+            ? `${msg} — is the backend running on port 8000?`
+            : msg,
+      });
     }
   };
 
@@ -66,11 +82,24 @@ export function CreateUserDialog() {
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold uppercase text-muted-foreground">Username</label>
-            <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Min 3 characters" autoFocus />
+            <Input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="e.g. jsmith"
+              autoFocus
+              autoComplete="off"
+            />
+            <p className="text-[11px] text-muted-foreground">Letters, numbers, hyphen, underscore only.</p>
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold uppercase text-muted-foreground">Password</label>
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 6 characters" autoComplete="new-password" />
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Min 6 characters"
+              autoComplete="new-password"
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold uppercase text-muted-foreground">Role</label>
@@ -78,6 +107,7 @@ export function CreateUserDialog() {
               {(["analyst", "admin"] as const).map((r) => (
                 <button
                   key={r}
+                  type="button"
                   onClick={() => setRole(r)}
                   className={`flex-1 rounded-md border px-3 py-2 text-sm capitalize transition-colors ${
                     role === r
@@ -91,10 +121,10 @@ export function CreateUserDialog() {
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t border-border/40 pt-3">
-            <Button variant="ghost" onClick={() => setOpen(false)} disabled={create.isPending}>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={create.isPending}>
               Cancel
             </Button>
-            <Button onClick={submit} disabled={create.isPending}>
+            <Button type="button" onClick={submit} disabled={create.isPending}>
               {create.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
               Create user
             </Button>

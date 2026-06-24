@@ -66,7 +66,7 @@ export function MaintenanceTab() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Download className="h-4 w-4 text-secondary" /> Export Configuration
+            <Download className="h-4 w-4 text-accent" /> Export Configuration
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">

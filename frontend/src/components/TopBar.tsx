@@ -10,14 +10,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/store/auth";
-import { useUi, type TimeRange } from "@/store/ui";
+import { formatTimeRangeShort, TIME_PRESETS } from "@/lib/time-range";
+import { useUi } from "@/store/ui";
 import { PhantomXLogo } from "@/components/Logo";
 
-const RANGES: TimeRange[] = ["Last 24H", "Last 7D", "Last 30D"];
+const RANGES = TIME_PRESETS;
 
 export function TopBar({ title }: { title: string }) {
   const { username, role, logout } = useAuth();
-  const { timeRange, setTimeRange } = useUi();
+  const { timeFrom, timeTo, applyPreset } = useUi();
   const navigate = useNavigate();
 
   return (
@@ -34,15 +35,15 @@ export function TopBar({ title }: { title: string }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
-              <Clock className="h-3.5 w-3.5 text-secondary" />
-              {timeRange}
+              <Clock className="h-3.5 w-3.5 text-accent" />
+              {formatTimeRangeShort(timeFrom, timeTo)}
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {RANGES.map((r) => (
-              <DropdownMenuItem key={r} onClick={() => setTimeRange(r)}>
-                {r}
+              <DropdownMenuItem key={r.id} onClick={() => applyPreset(r.id)}>
+                {r.label}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -68,7 +69,7 @@ export function TopBar({ title }: { title: string }) {
           <DropdownMenuContent align="end" className="min-w-[200px]">
             <DropdownMenuLabel>Signed in as {username}</DropdownMenuLabel>
             <DropdownMenuItem disabled className="opacity-100">
-              <ShieldCheck className="h-4 w-4 text-secondary" />
+              <ShieldCheck className="h-4 w-4 text-accent" />
               Role: <span className="font-semibold capitalize">{role}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />

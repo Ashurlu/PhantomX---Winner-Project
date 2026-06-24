@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { useAdminSettings, useUpdateSettings } from "@/lib/api";
+import { AdminTabLoader } from "./AdminTabLoader";
 
 export function DataSourceTab() {
-  const { data, isLoading } = useAdminSettings();
+  const { data, isLoading, isFetching } = useAdminSettings();
   const update = useUpdateSettings();
 
   const set = async (dataSource: "mock" | "live") => {
@@ -22,11 +23,11 @@ export function DataSourceTab() {
     }
   };
 
-  if (isLoading || !data) {
-    return <Skeleton className="h-48 w-full" />;
-  }
-
   return (
+    <AdminTabLoader>
+      {isLoading || (isFetching && !data) || !data ? (
+        <Skeleton className="h-48 w-full" />
+      ) : (
     <div className="grid gap-5 lg:grid-cols-2">
       <Option
         active={data.dataSource === "mock"}
@@ -65,6 +66,8 @@ export function DataSourceTab() {
         </CardContent>
       </Card>
     </div>
+      )}
+    </AdminTabLoader>
   );
 }
 

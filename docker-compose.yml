@@ -1,14 +1,31 @@
 services:
+  pentest-engine:
+    build:
+      context: ./proton-red
+      dockerfile: Dockerfile
+    container_name: sentrix-pentest-engine
+    ports:
+      - "8001:8000"
+    volumes:
+      - proton_red_results:/app/results
+    restart: unless-stopped
+
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: sentrix-backend
     environment:
       - APP_NAME=SENTRIX
       - DATA_SOURCE=mock
       - JWT_SECRET=change-me-in-production-super-secret-key
       - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+      - AI_PROVIDER=local_mock
+      - PENTEST_BASE_URL=http://pentest-engine:8000
     ports:
       - "8000:8000"
+    depends_on:
+      - pentest-engine
 
   frontend:
     build:
@@ -20,3 +37,6 @@ services:
       - "3000:80"
     depends_on:
       - backend
+
+volumes:
+  proton_red_results:

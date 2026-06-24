@@ -25,7 +25,7 @@ export function DisplayCard({
     <button
       onClick={onClick}
       className={cn(
-        "group relative flex w-full flex-col gap-2 overflow-hidden rounded-xl border border-border/40 bg-card/60 p-5 text-left backdrop-blur-xl transition-all duration-300",
+        "group relative flex w-full flex-col gap-2 overflow-hidden rounded-xl border border-border/60 bg-card p-5 text-left shadow-sm transition-all duration-300",
         "hover:-translate-y-1 hover:border-primary/50 hover:shadow-[0_18px_50px_-12px_hsl(var(--primary)/0.45)]",
         className
       )}

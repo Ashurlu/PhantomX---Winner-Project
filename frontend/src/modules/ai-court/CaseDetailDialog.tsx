@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
@@ -16,7 +17,9 @@ import {
 } from "@/components/ui/dialog";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAiCourtCase } from "@/lib/api";
+import { useAiCourtCase, useAiCourtCases, useCasesInbox, useRules } from "@/lib/api";
+import { CaseAssigneeBadge } from "./CaseAssigneeBadge";
+import { resolveAssignee } from "./ai-court-helpers";
 import type { CaseDetail } from "@/lib/types";
 
 export function CaseDetailDialog({
@@ -40,19 +43,37 @@ export function CaseDetailDialog({
             <Skeleton className="h-40 w-full" />
           </div>
         ) : (
-          <CaseBody data={data} />
+          <CaseBody data={data} onClose={onClose} />
         )}
       </DialogContent>
     </Dialog>
   );
 }
 
-function CaseBody({ data }: { data: CaseDetail }) {
+function confidenceMeta(confidence: number) {
+  const pct = Math.round(confidence * 100);
+  if (pct >= 85) return { color: "#10B981", label: "High confidence — strong true positive" };
+  if (pct >= 65) return { color: "#8B5CF6", label: "Moderate confidence — corroborated by evidence" };
+  if (pct >= 45) return { color: "#F59E0B", label: "Low confidence — review recommended" };
+  return { color: "#EF4444", label: "Uncertain — manual validation required" };
+}
+
+function CaseBody({ data, onClose }: { data: CaseDetail; onClose?: () => void }) {
+  const rules = useRules();
+  const courtCases = useAiCourtCases();
+  const inbox = useCasesInbox();
+  const linkedRule = rules.data?.find((r) => r.sourceAlertId === data.alertId);
+  const courtSummary = courtCases.data?.find((c) => c.alertId === data.alertId);
+  const linkedCaseId = courtSummary?.linkedCaseId;
+  const assignee = courtSummary ? resolveAssignee(inbox.data, courtSummary) : null;
+  const conf = confidenceMeta(data.tribunal.confidence);
+  const pct = Math.round(data.tribunal.confidence * 100);
+
   return (
     <>
       <DialogHeader>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-sm text-secondary">{data.alertId}</span>
+          <span className="text-mono-id text-sm">{data.alertId}</span>
           <SeverityBadge severity={data.severity} />
           <span className="ml-auto flex items-center gap-1.5 rounded-full bg-severity-resolved/15 px-3 py-1 text-xs font-bold text-severity-resolved">
             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -62,24 +83,71 @@ function CaseBody({ data }: { data: CaseDetail }) {
         <DialogTitle className="mt-1 text-xl">{data.title}</DialogTitle>
       </DialogHeader>
 
-      {/* Confidence */}
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between text-xs">
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <Scale className="h-3.5 w-3.5" /> Verdict confidence
+      {linkedRule && (
+        <Link
+          to={`/rules?rule=${encodeURIComponent(linkedRule.id)}`}
+          onClick={onClose}
+          className="flex items-center justify-between rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-sm transition-colors hover:bg-accent/10"
+        >
+          <span className="text-muted-foreground">
+            n8n proposed rule{" "}
+            <span className="font-mono font-semibold text-foreground">{linkedRule.id}</span>
           </span>
-          <span className="font-mono font-semibold text-primary">
-            {Math.round(data.tribunal.confidence * 100)}%
+          <span className="text-xs font-medium text-accent">View rule →</span>
+        </Link>
+      )}
+
+      {linkedCaseId && (
+        <Link
+          to={`/cases?case=${encodeURIComponent(linkedCaseId)}`}
+          onClick={onClose}
+          className="flex items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm transition-colors hover:bg-primary/10"
+        >
+          <span className="text-muted-foreground">
+            Incident case{" "}
+            <span className="font-mono font-semibold text-foreground">{linkedCaseId}</span>
+          </span>
+          <div className="flex items-center gap-3">
+            <CaseAssigneeBadge assignee={assignee} showLabel />
+            <span className="text-xs font-medium text-primary">Open in Cases →</span>
+          </div>
+        </Link>
+      )}
+
+      {!linkedCaseId && (
+        <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 px-3 py-2 text-sm">
+          <span className="text-muted-foreground">Incident case assignment</span>
+          <CaseAssigneeBadge assignee={assignee} showLabel />
+        </div>
+      )}
+
+      {/* Confidence */}
+      <div className="rounded-lg border border-border/50 bg-muted/25 px-4 py-3">
+        <div className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Scale className="h-4 w-4 text-muted-foreground" />
+            Verdict confidence
+          </span>
+          <span
+            className="font-display text-2xl font-bold tabular-nums"
+            style={{ color: conf.color }}
+          >
+            {pct}%
           </span>
         </div>
-        <div className="h-2.5 overflow-hidden rounded-full bg-background/60">
+        <div className="mt-3 h-3 overflow-hidden rounded-full bg-border/50">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-primary to-secondary"
+            className="h-full rounded-full"
+            style={{
+              background: conf.color,
+              boxShadow: `0 0 10px color-mix(in srgb, ${conf.color} 45%, transparent)`,
+            }}
             initial={{ width: 0 }}
-            animate={{ width: `${data.tribunal.confidence * 100}%` }}
-            transition={{ duration: 0.7 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
           />
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">{conf.label}</p>
       </div>
 
       {/* Evidence */}
@@ -120,7 +188,7 @@ function CaseBody({ data }: { data: CaseDetail }) {
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
           <div className="mb-3 flex items-center gap-2">
             <SeverityBadge severity={data.recommendation.severity} />
-            <span className="ml-auto flex items-center gap-1.5 font-mono text-xs text-secondary">
+            <span className="ml-auto flex items-center gap-1.5 text-mono-id text-xs">
               <Gavel className="h-3.5 w-3.5" />
               {data.recommendation.playbook}
             </span>

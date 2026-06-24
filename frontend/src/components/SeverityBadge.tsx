@@ -17,8 +17,8 @@ export function SeverityBadge({
       )}
       style={{
         color,
-        background: `color-mix(in srgb, ${color} 16%, transparent)`,
-        border: `1px solid color-mix(in srgb, ${color} 40%, transparent)`,
+        background: `color-mix(in srgb, ${color} 22%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${color} 55%, transparent)`,
       }}
     >
       <span
