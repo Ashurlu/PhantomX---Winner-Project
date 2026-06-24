@@ -8,7 +8,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
 COPY pentest-agent ./pentest-agent
 
+# Fail the image build if the agent was not in the git checkout / build context.
+RUN test -f pentest-agent/backend/web_pentest/routes.py \
+    && test -d pentest-agent/core/skills/web \
+    || (echo "BUILD ERROR: pentest-agent/ is missing. Commit pentest-agent/ to the repo and rebuild." && exit 1)
+
 ENV PHANTOMX_DB_PATH=/app/data/phantomx.db
+ENV PENTEST_AGENT_ROOT=/app/pentest-agent
 RUN mkdir -p /app/data
 
 EXPOSE 8000

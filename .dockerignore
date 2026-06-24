@@ -1,0 +1,11 @@
+# Keep pentest-agent in the backend image build context (required for Web Assessment).
+.git
+.github
+frontend/node_modules
+frontend/dist
+backend/.venv
+**/__pycache__
+**/*.pyc
+.env.prod
+.claude
+.cursor

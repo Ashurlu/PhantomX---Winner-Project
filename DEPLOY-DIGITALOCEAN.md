@@ -154,7 +154,34 @@ User accounts and settings persist in the Docker volume `sentrix_data`.
 | Blank page | `docker compose ... logs frontend` |
 | Login fails | `docker compose ... logs backend` — check `JWT_SECRET` is set |
 | 502 on API | `docker compose ... ps` — backend must be healthy |
+| **Web pentest module not found** | `pentest-agent/` was not in your GitHub repo. Commit it (see below), pull on the droplet, rebuild |
 | Out of memory | Resize droplet to 2 GB RAM |
+
+### Web pentest: "module not found" on deploy
+
+The Web Assessment tab needs the **`pentest-agent/`** folder at the project root. It must be **committed to git** (not only on your laptop).
+
+On your PC:
+
+```bash
+# If pentest-agent was a separate git clone, remove its nested .git first:
+rm -rf pentest-agent/.git   # Linux/macOS
+# Windows: Remove-Item -Recurse -Force pentest-agent\.git
+
+git add pentest-agent/
+git commit -m "Vendor pentest-agent for production deploy"
+git push
+```
+
+On the droplet:
+
+```bash
+cd PhantomX   # or your clone path
+git pull
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
+If the build fails with `BUILD ERROR: pentest-agent/ is missing`, the folder still is not in the repo — push it from your PC first.
 
 ---
 
