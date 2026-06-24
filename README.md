@@ -17,6 +17,8 @@
 
 *Bridging the gap between adversary emulation, detection engineering, and explainable artificial intelligence.*
 
+🌐 **Live demo:** [http://YOUR_SERVER_IP](http://YOUR_SERVER_IP) — sign in with `admin` / `admin123`
+
 </div>
 
 ---
@@ -91,6 +93,26 @@ Automated execution of real-world attack techniques.
 </td>
 </tr>
 </table>
+
+---
+
+## Platform Modules
+
+PhantomX ships as a complete, multi-page SOC console. Every module is live data-driven, theme-aware (**light and night mode**), and role-gated.
+
+| Module | What it does |
+|---|---|
+| **Operations Overview** | Live command center with a **3D telemetry core** (sources stream in → core → resolved/open branches), KPI cards, incident-handling split, severity breakdown, and a live "False Positives Auto-Closed" counter. |
+| **Case Management (Inbox)** | Full **Kanban incident board** (Open / In Progress / Done) with AI case summaries, case history, notes & tasks, priority filters, move-between-columns, and an **Add Case** workflow. |
+| **Detection — Alert Intelligence** | Category & severity **donut charts**, daily alert-volume bars, an **Investigation Coverage treemap**, alert-source breakdown, and an interactive **Threat Hunt** panel. |
+| **Investigation Pipeline** | End-to-end **flow visualization** (Ingestion → Categorization → Enrichment → Agent Triage → Determination → Status). |
+| **AI Court** | The multi-agent tribunal — verdicts on **true positives only**, with a 3D Prosecutor / Defender / Judge visualization, case feed, and remediation recommendations. |
+| **Recommended Rules** | **Sigma** detection rules proposed from real incidents; approve / edit / reject-with-reason (admin) + ATT&CK Navigator layer export. |
+| **AGI / Web Pentest** | Atomic Red Team TTP execution + an embedded **web vulnerability agent** (security headers, exposed files, robots/sitemap, cookie flags, Swagger/OpenAPI). |
+| **ProtonRed** | **Active Directory** adversary emulation & pentest integration. |
+| **CRAMM** | Risk & compliance assessment module with audit trail. |
+| **SOC Assistant (Copilot)** | An embedded **AI chatbot** grounded in live SOC context for triage and investigation support. |
+| **Admin Console** | API keys, user management (RBAC), data-source switching, audit log, system status, and maintenance. |
 
 ---
 
@@ -291,13 +313,48 @@ This flexibility allows organizations to deploy PhantomX within cloud, hybrid, o
 
 | Layer               | Technologies                         |
 | ------------------- | ------------------------------------ |
-| Frontend            | *Add Your Technologies*              |
-| Backend             | *Add Your Technologies*              |
-| AI Layer            | OpenAI, Gemini, Ollama, Local Models |
-| Security Validation | Atomic Red Team                      |
-| Data Processing     | JSON Pipelines                       |
+| Frontend            | React 18 · Vite · TypeScript · Tailwind CSS · shadcn/ui · Framer Motion · GSAP · Recharts · React Three Fiber (three.js) · Zustand · TanStack Query · React Router |
+| Backend             | FastAPI · Uvicorn (Python 3) · Pydantic · JWT (python-jose) · bcrypt · SQLite · httpx · WebSockets · PyYAML |
+| AI Layer            | OpenAI · Gemini · Anthropic Claude · Azure OpenAI · OpenRouter · Ollama / local models |
+| Security Validation | Atomic Red Team · MITRE ATT&CK · Sigma · Wazuh/SIEM · Web & Active-Directory pentest agents |
+| Data Processing     | JSON Pipelines · normalization & enrichment |
 | Reporting           | HTML Report Generation               |
-| APIs                | REST APIs                            |
+| APIs                | REST (`/api/v1`) + WebSocket streaming |
+| Deployment          | Docker · Docker Compose · Nginx · Caddy (auto-HTTPS) · DigitalOcean |
+
+---
+
+## Getting Started
+
+### Run with Docker (recommended)
+
+```bash
+docker compose up --build
+# Frontend → http://localhost:3000   ·   Backend → http://localhost:8000/docs
+```
+
+### Run locally (dev)
+
+```bash
+# Backend
+cd backend && python -m venv .venv
+.venv\Scripts\activate          # *nix: source .venv/bin/activate
+pip install -r requirements.txt && cp .env.example .env
+uvicorn app.main:app --reload --port 8000
+
+# Frontend
+cd frontend && npm install && npm run dev   # http://localhost:5173
+```
+
+### Deploy to production (DigitalOcean)
+
+A one-command production stack (Nginx + FastAPI + auto-HTTPS) is included — see **[DEPLOY-DIGITALOCEAN.md](DEPLOY-DIGITALOCEAN.md)**, or on a fresh Ubuntu droplet:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Ashurlu/PhantomX/main/deploy/remote-install.sh | bash
+```
+
+**Default accounts:** `admin` / `admin123` (full access) · `analyst` / `analyst123` (view-only). Change the admin password after going live.
 
 ---
 
