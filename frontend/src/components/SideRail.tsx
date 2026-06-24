@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   FolderKanban,
   Gavel,
+  Grid3X3,
   LayoutDashboard,
   Settings2,
   ShieldHalf,
@@ -24,6 +25,7 @@ const ITEMS: RailItem[] = [
   { to: "/cases", label: "Cases", icon: FolderKanban },
   { to: "/ai-court", label: "AI Court", icon: Gavel },
   { to: "/rules", label: "Recommended Rules", icon: ShieldHalf },
+  { to: "/cramm", label: "CRAMM Table", icon: Grid3X3 },
   { to: "/pentest", label: "AGI Pentest", icon: Swords },
   { to: "/admin", label: "Admin Console", icon: Settings2, adminOnly: true },
 ];

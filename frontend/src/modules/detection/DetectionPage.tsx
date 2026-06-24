@@ -13,6 +13,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { AlertTimeTimeline } from "@/components/AlertTimeTimeline";
 import { CardSkeletonGrid, ErrorState } from "@/components/States";
+import { ModuleHero, ModuleLiveBadge, ModulePanel } from "@/components/module";
 import { useDetection } from "@/lib/api";
 import { formatTimeRangeShort } from "@/lib/time-range";
 import { SEVERITY_COLORS } from "@/lib/theme";
@@ -81,7 +82,7 @@ function Donut({
   const [active, setActive] = useState<number | undefined>(undefined);
 
   return (
-    <Card className="p-6">
+    <Card className="module-panel p-6 shadow-none">
       <p className="text-center text-sm font-semibold text-foreground">{title}</p>
       <div className="mt-4 flex items-center gap-6">
         <div className="relative h-44 w-44 shrink-0">
@@ -179,7 +180,7 @@ function WeeklyAverageChart({
   const chartData = buildWeeklyChartData(weekly, weeklyLegend);
 
   return (
-    <Card className="p-6">
+    <Card className="module-panel p-6 shadow-none">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-foreground">Weekly Average</p>
         <span className="text-sm font-bold text-foreground">{weeklyAverage} Alerts</span>
@@ -241,22 +242,21 @@ export function DetectionPage() {
       transition={{ duration: 0.3 }}
       className="flex flex-col gap-6"
     >
-      <div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">Detection</span>
-          <span className="opacity-50">/</span>
-          <span>Alert Intelligence</span>
-        </div>
-        <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          Alert Intelligence
-        </h1>
-        <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
-          Category and severity breakdowns, source coverage, and a Wazuh-style timeline
-          brush — all scoped to your selected window.
-        </p>
-      </div>
+      <ModuleHero
+        accent="cyan"
+        section="Detection"
+        title="Alert Intelligence"
+        description="Category and severity breakdowns, source coverage, and a Wazuh-style timeline brush — all scoped to your selected window."
+        stats={[
+          { label: "Period", value: periodLabel, accent: "#F59E0B" },
+          { label: "Total alerts", value: total > 0 ? total.toLocaleString() : "—", accent: "#22D3EE" },
+        ]}
+        badges={<ModuleLiveBadge live />}
+      />
 
-      <AlertTimeTimeline />
+      <ModulePanel className="overflow-hidden p-0">
+        <AlertTimeTimeline />
+      </ModulePanel>
 
       {isError && (
         <ErrorState message="Failed to load detection intelligence." onRetry={() => refetch()} />
@@ -287,7 +287,7 @@ export function DetectionPage() {
             />
           </div>
 
-          <Card className="p-6">
+          <Card className="module-panel p-6 shadow-none">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-foreground">Investigation Coverage</p>
               <span className="text-sm text-muted-foreground">

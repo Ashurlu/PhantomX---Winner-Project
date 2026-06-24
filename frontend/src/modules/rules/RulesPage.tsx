@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/States";
+import { ModuleHero, ModulePanel, ModuleStatTile } from "@/components/module";
 import { useRules } from "@/lib/api";
 import { useAuth } from "@/store/auth";
 import { RuleDetailDialog } from "./RuleDetailDialog";
@@ -67,25 +68,28 @@ export function RulesPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="flex items-center gap-2 font-display text-xl font-bold">
-            <ShieldHalf className="h-5 w-5 text-primary" />
-            Recommended Sigma Rules
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Proposed by the n8n AI nodes from true-positive alerts · approved by hand
-          </p>
-        </div>
-        {isAdmin ? (
-          <NewRuleDialog defaultCategory={tab} />
-        ) : (
-          <Badge variant="outline" className="text-xs">
-            Read-only (analyst)
-          </Badge>
-        )}
-      </div>
+      <ModuleHero
+        accent="amber"
+        section="Detection Engineering"
+        title="Recommended Sigma Rules"
+        description="Proposed by the n8n AI nodes from true-positive alerts — reviewed and approved by your team."
+        stats={[
+          { label: "IR rules", value: irRules.length, accent: "#F59E0B" },
+          { label: "AD rules", value: adRules.length, accent: "#8B5CF6" },
+          { label: "Total", value: data?.length ?? 0, accent: "#22D3EE" },
+        ]}
+        actions={
+          isAdmin ? (
+            <NewRuleDialog defaultCategory={tab} />
+          ) : (
+            <Badge variant="outline" className="text-xs">
+              Read-only (analyst)
+            </Badge>
+          )
+        }
+      />
 
+      <ModulePanel className="p-5">
       <Tabs value={tab} onValueChange={(v) => setTab(v as RuleCategory)}>
         <TabsList>
           <TabsTrigger value="incident-response" className="gap-2">
@@ -119,6 +123,7 @@ export function RulesPage() {
           />
         </TabsContent>
       </Tabs>
+      </ModulePanel>
 
       <RuleDetailDialog
         ruleId={selected}
@@ -287,7 +292,7 @@ function SummaryCard({
   const meta = STATUS_META[status];
   const Icon = meta.icon;
   return (
-    <Card className="p-5">
+    <Card className="module-panel p-5 shadow-none">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
           <span className="text-xs uppercase tracking-wider text-muted-foreground">

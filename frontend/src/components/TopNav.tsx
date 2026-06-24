@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   ChevronDown,
   Clock,
@@ -34,6 +35,7 @@ const NAV = [
   { to: "/detection", label: "Detection" },
   { to: "/ai-court", label: "AI Court" },
   { to: "/rules", label: "Recommended Rules" },
+  { to: "/cramm", label: "CRAMM Table" },
   { to: "/pentest", label: "AGI Pentest" },
 ];
 const ADMIN_ITEM = { to: "/admin", label: "Admin Console" };
@@ -56,27 +58,26 @@ export function TopNav() {
 
   return (
     <header
-      className="sticky top-0 z-50 h-16 w-full shrink-0"
-      style={{ background: "hsl(var(--nav))", color: "hsl(var(--nav-foreground))" }}
+      className="seven-nav sticky top-0 z-50 h-[52px] w-full shrink-0"
+      style={{ background: "#0D0D0D", color: "#fff" }}
     >
-      <div className="mx-auto flex h-full max-w-[1680px] items-center justify-between gap-6 px-6">
-        {/* left: logo + nav */}
-        <div className="flex items-center gap-8">
+      <div className="mx-auto flex h-full max-w-[1680px] items-center justify-between gap-6 px-5">
+        <div className="flex items-center gap-6">
           <NavLink to="/overview" className="flex items-center">
-            <span className="flex items-center text-[15px] font-bold tracking-[0.14em] text-white">
+            <span className="flex items-center text-[17px] font-bold tracking-[-0.02em] text-white">
               PHANTOM
-              <PhantomXMark size={18} className="ml-1" core="#6366f1" />
+              <PhantomXMark size={18} className="ml-1" core="#6B5CE7" />
             </span>
           </NavLink>
-          <nav className="hidden items-center gap-1 lg:flex">
+          <nav className="hidden h-full items-stretch gap-0.5 lg:flex">
             {items.map((i) => (
               <NavLink
                 key={i.to}
                 to={i.to}
                 className={({ isActive }) =>
                   cn(
-                    "relative px-3 py-5 text-sm font-medium transition-colors",
-                    isActive ? "text-white" : "text-white/55 hover:text-white"
+                    "seven-nav-item relative flex h-full items-center px-3 text-[13px] font-medium transition-colors duration-150",
+                    isActive ? "font-semibold text-white" : "text-white/55 hover:text-white/90"
                   )
                 }
               >
@@ -84,7 +85,11 @@ export function TopNav() {
                   <>
                     {i.label}
                     {isActive && (
-                      <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-accent" />
+                      <motion.span
+                        layoutId="nav-underline"
+                        className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-white"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
                     )}
                   </>
                 )}

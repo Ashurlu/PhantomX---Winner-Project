@@ -4,7 +4,9 @@
 
 services:
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: sentrix-backend
     environment:
       APP_NAME: SENTRIX
@@ -13,6 +15,7 @@ services:
       JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-480}
       CORS_ORIGINS: ${PUBLIC_URL:-http://localhost}
       PHANTOMX_DB_PATH: /app/data/phantomx.db
+      AI_PROVIDER: ${AI_PROVIDER:-local_mock}
     volumes:
       - sentrix_data:/app/data
     expose:

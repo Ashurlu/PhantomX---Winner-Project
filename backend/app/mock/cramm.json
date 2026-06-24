@@ -1,0 +1,107 @@
+{
+  "stats": {
+    "totalRisks": 45,
+    "criticalCount": 3,
+    "highSeverityCount": 18,
+    "avgHealthScore": 71
+  },
+  "insight": {
+    "message": "Identity vector risks have increased by 14% this week. Recommendation: Audit all service accounts with SPNs and enforce AES encryption for Kerberos tickets to mitigate Roasting techniques.",
+    "ctaLabel": "View Full Audit",
+    "trendPct": 14
+  },
+  "critical": [
+    {
+      "id": "T1558.001",
+      "techniqueId": "T1558.001",
+      "title": "Golden Ticket",
+      "description": "Forged Kerberos TGT using krbtgt hash enables persistent domain-wide access and bypasses normal authentication controls.",
+      "riskScore": 9.8,
+      "severity": "critical",
+      "tags": ["CREDENTIAL ACCESS", "PERSISTENCE"],
+      "crammLevel": 5
+    },
+    {
+      "id": "T1558.002",
+      "techniqueId": "T1558.002",
+      "title": "Silver Ticket",
+      "description": "Forged Kerberos service tickets for specific SPNs allow lateral movement without contacting the domain controller.",
+      "riskScore": 9.2,
+      "severity": "critical",
+      "tags": ["CREDENTIAL ACCESS"],
+      "crammLevel": 5
+    },
+    {
+      "id": "T1003.006",
+      "techniqueId": "T1003.006",
+      "title": "DCSync Attack",
+      "description": "Replication API abuse to dump password hashes from AD — equivalent to compromising the domain controller.",
+      "riskScore": 9.5,
+      "severity": "critical",
+      "tags": ["CREDENTIAL ACCESS"],
+      "crammLevel": 5
+    }
+  ],
+  "high": [
+    {
+      "id": "T1003.003",
+      "techniqueId": "T1003.003",
+      "title": "OS Dumping: NTDS",
+      "description": "Extraction of NTDS.dit database for offline credential cracking and golden ticket material.",
+      "riskScore": 8.5,
+      "severity": "high",
+      "tags": ["CREDENTIAL ACCESS"],
+      "crammLevel": 4
+    },
+    {
+      "id": "T1003.001",
+      "techniqueId": "T1003.001",
+      "title": "OS Dumping: LSASS",
+      "description": "Memory dump of LSASS process to harvest credentials and Kerberos tickets from live sessions.",
+      "riskScore": 8.2,
+      "severity": "high",
+      "tags": ["CREDENTIAL ACCESS"],
+      "crammLevel": 4
+    },
+    {
+      "id": "T1558.003",
+      "techniqueId": "T1558.003",
+      "title": "Kerberoasting",
+      "description": "Offline cracking of Kerberos service tickets for accounts with weak SPN passwords.",
+      "riskScore": 8.0,
+      "severity": "high",
+      "tags": ["CREDENTIAL ACCESS"],
+      "crammLevel": 3
+    },
+    {
+      "id": "T1558.004",
+      "techniqueId": "T1558.004",
+      "title": "AS-REP Roasting",
+      "description": "Abuse of accounts without Kerberos pre-authentication to obtain crackable AS-REP hashes.",
+      "riskScore": 7.8,
+      "severity": "high",
+      "tags": ["CREDENTIAL ACCESS"],
+      "crammLevel": 3
+    },
+    {
+      "id": "T1550.002",
+      "techniqueId": "T1550.002",
+      "title": "Pass the Hash",
+      "description": "NTLM hash reuse for lateral movement without recovering plaintext passwords.",
+      "riskScore": 7.5,
+      "severity": "high",
+      "tags": ["LATERAL MOVEMENT"],
+      "crammLevel": 3
+    },
+    {
+      "id": "T1557",
+      "techniqueId": "T1557",
+      "title": "Adversary-in-the-Middle",
+      "description": "Interception or relay of authentication traffic to capture or relay credentials.",
+      "riskScore": 6.5,
+      "severity": "high",
+      "tags": ["CREDENTIAL ACCESS"],
+      "crammLevel": 2
+    }
+  ]
+}

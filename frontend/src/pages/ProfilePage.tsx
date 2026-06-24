@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, KeyRound, Loader2, Mail, Save, Trash2, User } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ErrorState, LoadingState } from "@/components/States";
+import { ModuleHero, ModulePanel } from "@/components/module";
 import { toast } from "@/components/ui/sonner";
 import {
   useChangeOwnPassword,
@@ -146,16 +147,18 @@ export function ProfilePage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <div>
-        <p className="text-sm text-muted-foreground">Account</p>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight">My Profile</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your photo, username, email, and password.
-        </p>
-      </div>
+      <ModuleHero
+        accent="violet"
+        section="Account"
+        title="My Profile"
+        description="Manage your photo, username, email, and password."
+        stats={[
+          { label: "Role", value: role ?? "—", accent: "#8B5CF6" },
+          { label: "Username", value: displayName || username || "—", accent: "#22D3EE" },
+        ]}
+      />
 
-      {/* Photo */}
-      <Card>
+      <ModulePanel className="p-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Camera className="h-4 w-4 text-accent" />
@@ -189,10 +192,9 @@ export function ProfilePage() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </ModulePanel>
 
-      {/* Account */}
-      <Card>
+      <ModulePanel className="p-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <User className="h-4 w-4 text-accent" />
@@ -250,10 +252,9 @@ export function ProfilePage() {
             </Button>
           </div>
         </CardContent>
-      </Card>
+      </ModulePanel>
 
-      {/* Password */}
-      <Card>
+      <ModulePanel className="p-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <KeyRound className="h-4 w-4 text-accent" />
@@ -310,7 +311,7 @@ export function ProfilePage() {
             </Button>
           </div>
         </CardContent>
-      </Card>
+      </ModulePanel>
     </div>
   );
 }

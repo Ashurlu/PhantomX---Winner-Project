@@ -1,0 +1,170 @@
+{
+  "T1558.003": {
+    "id": "T1558.003",
+    "techniqueId": "T1558.003",
+    "title": "Kerberoasting: Service Account Exploitation",
+    "subtitle": "Kerberoasting: Service Account Exploitation",
+    "description": "Adversaries abuse valid Kerberos ticket requests to extract service account credentials offline. High-value targets include SQL and backup service principals with legacy RC4 encryption.",
+    "severity": "medium-high",
+    "severityLabel": "MEDIUM/HIGH",
+    "mitreId": "T1558.003",
+    "crammLevel": 3,
+    "riskScore": 96,
+    "riskScoreLabel": "MODERATE+",
+    "annualLoss": 28400,
+    "annualLossLabel": "$28.4k / YEAR",
+    "resolutionWindow": "04:12:45",
+    "systemId": "KERB-T1558-CRAMM",
+    "asset": {
+      "name": "svc_sql_prod",
+      "assetValue": 6,
+      "principalName": "svc_sql_prod@CORP.LOCAL",
+      "domainPath": "CORP.LOCAL / SQL-CLUSTER-01",
+      "privilegeLevel": "DB Admin / Domain User",
+      "note": "Linked to critical production database clusters."
+    },
+    "assessment": {
+      "model": "CRAMM 5.1",
+      "standard": "ISO 27005",
+      "assetValue": 6,
+      "assetValueNote": "Service Significance",
+      "threatDegree": 8,
+      "threatDegreeNote": "Prevalence Index",
+      "exposureFactor": 2,
+      "exposureFactorNote": "Detection Gap",
+      "criticalityPct": 60,
+      "vectors": [
+        { "label": "Account Exposure (SPN Density)", "pct": 65, "tone": "cyan" },
+        { "label": "Offline Cracking Feasibility", "pct": 82, "tone": "rose" },
+        { "label": "Lateral Movement Potential", "pct": 45, "tone": "amber" }
+      ],
+      "enterpriseAle": 28400
+    },
+    "controls": [
+      {
+        "id": "C-01",
+        "title": "Enforce AES Encryption",
+        "description": "Disable RC4 for Kerberos and require AES-256 for all service accounts with SPNs.",
+        "priority": "high"
+      },
+      {
+        "id": "C-02",
+        "title": "Rotate svc_sql_prod credentials",
+        "description": "Immediate rotation with 25+ character passphrase and gMSA where possible.",
+        "priority": "high"
+      },
+      {
+        "id": "C-03",
+        "title": "Monitor TGS-REQ anomalies",
+        "description": "Alert on unusual volume of TGS requests per user toward rare SPNs.",
+        "priority": "medium"
+      }
+    ],
+    "linkedCaseId": "PX-D034461",
+    "linkedAlertId": "A-1042"
+  },
+  "T1558.001": {
+    "id": "T1558.001",
+    "techniqueId": "T1558.001",
+    "title": "Golden Ticket: Domain Persistence",
+    "subtitle": "Golden Ticket Attack",
+    "description": "Forged TGT using krbtgt NTLM hash — full domain impersonation until krbtgt is rotated twice.",
+    "severity": "critical",
+    "severityLabel": "CRITICAL",
+    "mitreId": "T1558.001",
+    "crammLevel": 5,
+    "riskScore": 98,
+    "riskScoreLabel": "SEVERE",
+    "annualLoss": 142000,
+    "annualLossLabel": "$142k / YEAR",
+    "resolutionWindow": "02:08:30",
+    "systemId": "GOLD-T1558-CRAMM",
+    "asset": {
+      "name": "krbtgt",
+      "assetValue": 10,
+      "principalName": "krbtgt@CORP.LOCAL",
+      "domainPath": "CORP.LOCAL / DC-PRIMARY",
+      "privilegeLevel": "Domain Controller / Tier-0",
+      "note": "Compromise implies full Active Directory takeover."
+    },
+    "assessment": {
+      "model": "CRAMM 5.1",
+      "standard": "ISO 27005",
+      "assetValue": 10,
+      "assetValueNote": "Domain Criticality",
+      "threatDegree": 9,
+      "threatDegreeNote": "APT Prevalence",
+      "exposureFactor": 3,
+      "exposureFactorNote": "Detection Gap",
+      "criticalityPct": 92,
+      "vectors": [
+        { "label": "Persistence Duration", "pct": 95, "tone": "rose" },
+        { "label": "Lateral Scope", "pct": 88, "tone": "rose" },
+        { "label": "Recovery Complexity", "pct": 78, "tone": "amber" }
+      ],
+      "enterpriseAle": 142000
+    },
+    "controls": [
+      {
+        "id": "C-01",
+        "title": "krbtgt double rotation",
+        "description": "Execute documented krbtgt reset procedure across all DCs.",
+        "priority": "high"
+      }
+    ],
+    "linkedCaseId": "PX-D034471",
+    "linkedAlertId": "A-1455"
+  },
+  "T1003.006": {
+    "id": "T1003.006",
+    "techniqueId": "T1003.006",
+    "title": "DCSync: Directory Replication Abuse",
+    "subtitle": "DCSync Attack",
+    "description": "Replication rights abused to synchronize credentials from AD — same outcome as NTDS.dit theft.",
+    "severity": "critical",
+    "severityLabel": "CRITICAL",
+    "mitreId": "T1003.006",
+    "crammLevel": 5,
+    "riskScore": 95,
+    "riskScoreLabel": "SEVERE",
+    "annualLoss": 118500,
+    "annualLossLabel": "$118.5k / YEAR",
+    "resolutionWindow": "01:45:00",
+    "systemId": "DCSYNC-T1003-CRAMM",
+    "asset": {
+      "name": "CORP-DC01",
+      "assetValue": 10,
+      "principalName": "CORP\\DC-SYNC-ABUSE",
+      "domainPath": "CORP.LOCAL / DC-PRIMARY",
+      "privilegeLevel": "Domain Admin equivalent",
+      "note": "Linked to DCSync alert on non-DC host."
+    },
+    "assessment": {
+      "model": "CRAMM 5.1",
+      "standard": "ISO 27005",
+      "assetValue": 10,
+      "assetValueNote": "Domain Criticality",
+      "threatDegree": 9,
+      "threatDegreeNote": "Prevalence Index",
+      "exposureFactor": 2,
+      "exposureFactorNote": "Detection Gap",
+      "criticalityPct": 88,
+      "vectors": [
+        { "label": "Credential Exposure", "pct": 90, "tone": "rose" },
+        { "label": "Replication Rights Misuse", "pct": 85, "tone": "rose" },
+        { "label": "Containment Window", "pct": 40, "tone": "amber" }
+      ],
+      "enterpriseAle": 118500
+    },
+    "controls": [
+      {
+        "id": "C-01",
+        "title": "Disable abusive account",
+        "description": "Disable replicating account and reset krbtgt per IR playbook.",
+        "priority": "high"
+      }
+    ],
+    "linkedCaseId": "PX-D034471",
+    "linkedAlertId": "A-1455"
+  }
+}

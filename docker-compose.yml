@@ -1,12 +1,15 @@
 services:
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: sentrix-backend
     environment:
       - APP_NAME=SENTRIX
       - DATA_SOURCE=mock
       - JWT_SECRET=change-me-in-production-super-secret-key
       - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+      - AI_PROVIDER=local_mock
     ports:
       - "8000:8000"
 

@@ -9,8 +9,9 @@ export const SEVERITY_COLORS: Record<Severity | "resolved", string> = {
 };
 
 export const BRAND = {
-  background: "#0A0A0F",
-  primary: "#8B5CF6", // electric violet
-  secondary: "#22D3EE", // cyan
-  accent: "#F59E0B", // amber
+  background: "#F8F8FA",
+  primary: "#111111",
+  accent: "#6B5CE7",
+  secondary: "#2E8B6A",
+  chart: "#6B5CE7",
 };

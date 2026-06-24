@@ -14,6 +14,8 @@ import { AiCourtPage } from "@/modules/ai-court/AiCourtPage";
 import { CasesInboxPage } from "@/modules/cases/CasesInboxPage";
 import { RulesPage } from "@/modules/rules/RulesPage";
 import { PentestPage } from "@/modules/pentest/PentestPage";
+import { CrammPage } from "@/modules/cramm/CrammPage";
+import { CrammDetailPage } from "@/modules/cramm/CrammDetailPage";
 import { AdminPage } from "@/modules/admin/AdminPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 
@@ -40,6 +42,8 @@ export default function App() {
         <Route path="/detection" element={<DetectionPage />} />
         <Route path="/ai-court" element={<AiCourtPage />} />
         <Route path="/rules" element={<RulesPage />} />
+        <Route path="/cramm" element={<CrammPage />} />
+        <Route path="/cramm/:techniqueId" element={<CrammDetailPage />} />
         <Route path="/pentest" element={<PentestPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route

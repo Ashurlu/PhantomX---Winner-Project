@@ -4,40 +4,44 @@
 
 @layer base {
   :root {
-    /* 7AI-style light product theme — clean SaaS, dark top nav, white cards */
-    --background: 220 20% 97%;
-    --foreground: 222 47% 11%;
+    /* 7AI Design Handoff tokens */
+    --background: 240 11% 97%;
+    --foreground: 0 0% 7%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 0 0% 7%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 7%;
 
-    --primary: 222 47% 11%; /* dark ink — primary buttons */
+    --primary: 0 0% 7%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 240 6% 96%;
+    --secondary-foreground: 0 0% 7%;
 
-    --accent: 243 75% 59%; /* indigo accent */
+    --accent: 247 58% 60%;
     --accent-foreground: 0 0% 100%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 240 6% 96%;
+    --muted-foreground: 0 0% 42%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 4 78% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 243 75% 59%;
+    --border: 0 0% 92%;
+    --input: 0 0% 92%;
+    --ring: 247 58% 60%;
 
     --radius: 0.75rem;
 
-    /* dark top-nav surface (used by the app header) */
-    --nav: 222 30% 11%;
+    --nav: 0 0% 5%;
     --nav-foreground: 0 0% 100%;
+
+    --seven-chart-purple: 247 58% 60%;
+    --seven-chart-teal: 158 50% 36%;
+    --seven-shadow-card: 0 1px 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    --seven-shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
 
   /* ---- Night mode ---- */
@@ -85,8 +89,11 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground antialiased;
     background-color: hsl(var(--background));
+    font-family: "Inter", "Hanken Grotesk", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
   }
 
   ::-webkit-scrollbar {
@@ -114,15 +121,20 @@
     position: relative;
     border: 1px solid hsl(var(--border));
     background: hsl(var(--card));
-    box-shadow: 0 1px 2px hsl(222 47% 11% / 0.04), 0 1px 3px hsl(222 47% 11% / 0.04);
+    box-shadow: var(--seven-shadow-card);
+    border-radius: 12px;
   }
 
   .glass-hover {
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    transition:
+      box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.2s ease;
   }
   .glass-hover:hover {
-    border-color: hsl(220 13% 84%);
-    box-shadow: 0 4px 12px hsl(222 47% 11% / 0.08);
+    border-color: hsl(0 0% 85%);
+    box-shadow: var(--seven-shadow-pop);
+    transform: translateY(-2px);
   }
   .dark .glass {
     box-shadow: none;
@@ -194,6 +206,292 @@
     background: hsl(222 32% 11%);
     color: hsl(210 28% 92%);
     border-color: hsl(222 22% 24%);
+  }
+
+  /* Web scan pulse */
+  .web-scan-pulse,
+  .module-pulse {
+    animation: module-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes module-pulse {
+    0%, 100% { opacity: 0.35; transform: scale(0.92); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+  .web-severity-stripe-critical,
+  .web-severity-stripe-high { background: linear-gradient(180deg, #ef4444, #f97316); }
+  .web-severity-stripe-medium { background: linear-gradient(180deg, #eab308, #f59e0b); }
+  .web-severity-stripe-low { background: linear-gradient(180deg, #22d3ee, #3b82f6); }
+
+  /* ─── 7AI page ambient ─────────────────────────────────────── */
+  .ambient-aurora {
+    position: absolute;
+    top: -50%;
+    left: -25%;
+    width: 150%;
+    height: 120%;
+    background: conic-gradient(
+      from 0deg at 50% 50%,
+      hsl(247 58% 60% / 0.04),
+      hsl(158 50% 36% / 0.03),
+      hsl(247 58% 60% / 0.05),
+      transparent 55%,
+      hsl(158 50% 36% / 0.04),
+      hsl(247 58% 60% / 0.03)
+    );
+    filter: blur(60px);
+    opacity: 0.9;
+  }
+  .ambient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.45;
+  }
+  .ambient-orb-a {
+    width: 420px;
+    height: 420px;
+    top: -8%;
+    left: -5%;
+    background: radial-gradient(circle, hsl(247 58% 60% / 0.35), transparent 70%);
+  }
+  .ambient-orb-b {
+    width: 360px;
+    height: 360px;
+    top: 20%;
+    right: -8%;
+    background: radial-gradient(circle, hsl(158 50% 36% / 0.22), transparent 70%);
+  }
+  .ambient-orb-c {
+    width: 280px;
+    height: 280px;
+    bottom: 5%;
+    left: 35%;
+    background: radial-gradient(circle, hsl(247 58% 60% / 0.18), transparent 70%);
+  }
+  .ambient-orb-d {
+    width: 200px;
+    height: 200px;
+    top: 45%;
+    left: 55%;
+    background: radial-gradient(circle, hsl(158 50% 36% / 0.2), transparent 70%);
+  }
+  .ambient-particle {
+    position: absolute;
+    border-radius: 50%;
+    background: hsl(247 58% 60% / 0.5);
+    box-shadow: 0 0 8px hsl(247 58% 60% / 0.35);
+  }
+  .ambient-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(hsl(0 0% 0% / 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(0 0% 0% / 0.02) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black, transparent);
+  }
+
+  /* ─── 7AI module hero (dark brand bar) ─────────────────────── */
+  .seven-hero,
+  .web-assessment-hero,
+  .module-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid hsl(0 0% 100% / 0.06);
+    background: #0d0d0d;
+    color: #fff;
+    padding: 1.75rem 2rem;
+    box-shadow: 0 8px 32px hsl(0 0% 0% / 0.18);
+  }
+  .seven-hero-shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      hsl(0 0% 100% / 0.06) 50%,
+      transparent 60%
+    );
+    background-size: 200% 100%;
+    animation: seven-shimmer 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes seven-shimmer {
+    0%, 100% { background-position: 200% 0; }
+    50% { background-position: -200% 0; }
+  }
+  .seven-hero::after,
+  .module-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(hsl(0 0% 100% / 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(0 0% 100% / 0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    mask-image: linear-gradient(to bottom, black 0%, transparent 90%);
+  }
+  .module-hero-violet.seven-hero {
+    background: linear-gradient(135deg, #0d0d0d 0%, #1a1530 50%, #0d0d0d 100%);
+  }
+  .module-hero-cyan.seven-hero {
+    background: linear-gradient(135deg, #0d0d0d 0%, #0d1f1e 50%, #0d0d0d 100%);
+  }
+  .module-hero-amber.seven-hero {
+    background: linear-gradient(135deg, #0d0d0d 0%, #1f1808 50%, #0d0d0d 100%);
+  }
+  .module-hero-rose.seven-hero {
+    background: linear-gradient(135deg, #0d0d0d 0%, #1f0d12 50%, #0d0d0d 100%);
+  }
+  .module-hero-emerald.seven-hero {
+    background: linear-gradient(135deg, #0d0d0d 0%, #0d1a14 50%, #0d0d0d 100%);
+  }
+  .seven-hero-crumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 13px;
+  }
+  .seven-hero-title {
+    margin-top: 0.5rem;
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: clamp(1.5rem, 3vw, 1.875rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #fff;
+  }
+  .seven-hero-desc {
+    margin-top: 0.5rem;
+    max-width: 42rem;
+    font-size: 14px;
+    line-height: 1.6;
+    color: hsl(0 0% 100% / 0.55);
+  }
+  .seven-stat-chip {
+    min-width: 88px;
+    border-radius: 12px;
+    border: 1px solid hsl(0 0% 100% / 0.1);
+    background: hsl(0 0% 100% / 0.06);
+    padding: 0.75rem 1rem;
+    text-align: center;
+    backdrop-filter: blur(8px);
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .seven-stat-chip:hover {
+    background: hsl(0 0% 100% / 0.1);
+    transform: translateY(-2px);
+  }
+  .seven-stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: hsl(0 0% 100% / 0.45);
+  }
+  .seven-stat-value {
+    margin-top: 0.25rem;
+    font-size: 1.5rem;
+    font-weight: 300;
+    line-height: 1.1;
+  }
+
+  /* ─── 7AI cards & stat tiles ───────────────────────────────── */
+  .seven-card,
+  .web-assessment-panel,
+  .module-panel {
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    box-shadow: var(--seven-shadow-card);
+    border-radius: 12px;
+  }
+  .shadow-seven-pop {
+    box-shadow: var(--seven-shadow-pop);
+  }
+  .seven-stat-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    padding: 1.25rem;
+    box-shadow: var(--seven-shadow-card);
+  }
+  .seven-stat-card-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+  }
+  .seven-stat-card-value {
+    margin-top: 0.5rem;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  .seven-stat-card-glow {
+    position: absolute;
+    inset: -40% -20% auto;
+    height: 80%;
+    background: radial-gradient(ellipse, hsl(247 58% 60% / 0.08), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+  .seven-stat-card:hover .seven-stat-card-glow {
+    opacity: 1;
+  }
+
+  .dark .seven-hero,
+  .dark .module-hero {
+    border-color: hsl(0 0% 100% / 0.08);
+  }
+
+  /* ─── 7AI motion utilities (handoff spec) ─────────────────── */
+  @keyframes seven-fade-slide-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes seven-pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.35); opacity: 0.65; }
+  }
+  @keyframes seven-bar-grow {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+  }
+  @keyframes seven-count-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes seven-tab-slide {
+    from { opacity: 0; transform: translateX(-6px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes seven-float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    33% { transform: translateY(-6px) rotate(1deg); }
+    66% { transform: translateY(4px) rotate(-1deg); }
+  }
+
+  .seven-animate-in {
+    animation: seven-fade-slide-in 0.4s cubic-bezier(0, 0, 0.2, 1) both;
+  }
+  .seven-pulse-dot {
+    animation: seven-pulse-dot 1.4s ease-in-out infinite;
+  }
+  .seven-count-up {
+    animation: seven-count-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .seven-tab-enter {
+    animation: seven-tab-slide 0.2s cubic-bezier(0, 0, 0.2, 1) both;
+  }
+  .seven-float {
+    animation: seven-float 5s ease-in-out infinite;
+  }
+
+  .seven-nav {
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.06);
   }
 }
 

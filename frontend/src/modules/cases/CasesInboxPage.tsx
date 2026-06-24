@@ -35,6 +35,7 @@ import { SEVERITY_COLORS, type Severity } from "@/lib/theme";
 import type { CaseAssignee, CaseHistoryEvent, CaseStatus, InboxCase } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/store/auth";
+import { ModuleHero } from "@/components/module";
 import { CasePreviewPanel } from "./CasePreviewPanel";
 import {
   COLUMNS,
@@ -215,22 +216,20 @@ export function CasesInboxPage() {
 
   return (
     <div className="-mx-6 -my-6 flex h-[calc(100vh-4rem)] flex-col md:-mx-8 md:-my-8">
-      <div className="shrink-0 border-b border-border/60 bg-card px-6 py-4 md:px-8">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <span>Case Management</span>
-            <ChevronRight className="h-3.5 w-3.5" />
-            <span className="font-medium text-foreground">Inbox</span>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs">
-            <StatChip label="Open" value={counts.open} color="#EF4444" />
-            <StatChip label="In progress" value={counts.inProgress} color="#F59E0B" />
-            <StatChip label="Done" value={counts.done} color="#10B981" />
-            <StatChip label="Total" value={counts.total} color="#6366F1" />
-          </div>
-        </div>
+      <ModuleHero
+        accent="cyan"
+        section="Case Management"
+        title="Case Inbox"
+        className="shrink-0 rounded-none border-x-0 border-t-0"
+        stats={[
+          { label: "Open", value: counts.open, accent: "#FF7043" },
+          { label: "In progress", value: counts.inProgress, accent: "#FFC107" },
+          { label: "Done", value: counts.done, accent: "#2E8B6A" },
+          { label: "Total", value: counts.total, accent: "#6B5CE7" },
+        ]}
+      />
 
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="module-panel flex shrink-0 flex-wrap items-center gap-3 border-x-0 rounded-none border-t-0 px-6 py-3 md:px-8">
           <div className="relative max-w-md min-w-[200px] flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -342,7 +341,6 @@ export function CasesInboxPage() {
               Add Case
             </Button>
           </div>
-        </div>
       </div>
 
       <div className="flex min-h-0 flex-1 overflow-hidden bg-muted/20">
@@ -413,16 +411,6 @@ export function CasesInboxPage() {
         onCreate={addCase}
       />
     </div>
-  );
-}
-
-function StatChip({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-2.5 py-1">
-      <span className="h-2 w-2 rounded-full" style={{ background: color }} />
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-semibold text-foreground">{value}</span>
-    </span>
   );
 }
 

@@ -20,6 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KpiCard } from "@/components/KpiCard";
 import { DisplayCards } from "@/components/ui/display-cards";
+import { ModuleHero, ModuleLiveBadge } from "@/components/module";
 import { OverviewCore } from "@/three/OverviewCore";
 import { CardSkeletonGrid, ErrorState, LoadingState } from "@/components/States";
 import { useOverview, useSystemStatus } from "@/lib/api";
@@ -43,56 +44,22 @@ export function OverviewPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Command-center header — clean light product header (7AI style) */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-wrap items-end justify-between gap-5"
-      >
-        <div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Command Center</span>
-            <span className="opacity-50">/</span>
-            <span>Overview</span>
-          </div>
-          <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-            Operations Overview
-          </h1>
-          <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
-            Autonomous triage, adjudication, and MITRE ATT&amp;CK adversary
-            validation — running live across your environment.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5">
-            <span className="relative flex h-2 w-2">
-              <span
-                className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 ${
-                  status.data?.dataSource === "live" ? "bg-emerald-500" : "bg-amber-500"
-                }`}
-              />
-              <span
-                className={`relative inline-flex h-2 w-2 rounded-full ${
-                  status.data?.dataSource === "live" ? "bg-emerald-500" : "bg-amber-500"
-                }`}
-              />
-            </span>
-            <span className="text-xs font-medium text-foreground">
-              {status.data?.dataSource === "live" ? "Live" : "Mock"}
-            </span>
-          </span>
-          <div className="hidden text-right sm:block">
-            <div className="font-mono text-xl font-bold tabular-nums text-foreground">
-              <LiveClock />
-            </div>
-            <div className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-              Local time · {rl}
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      <ModuleHero
+        accent="violet"
+        section="Command Center"
+        title="Operations Overview"
+        description="Autonomous triage, adjudication, and MITRE ATT&CK adversary validation — running live across your environment."
+        badges={<ModuleLiveBadge live={status.data?.dataSource === "live"} />}
+        stats={
+          data
+            ? [
+                { label: "Alerts", value: formatNumber(data.alerts), accent: "#6B5CE7" },
+                { label: "Incidents", value: data.incidents, accent: "#2E8B6A" },
+                { label: "Open", value: data.incidentsOpen, accent: "#FF7043" },
+              ]
+            : undefined
+        }
+      />
 
       {/* Hero: 3D core + FP auto-closed */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -155,33 +122,37 @@ export function OverviewPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard
+              index={0}
               label={`Data Ingestion (${rl})`}
               value={`${data.kpis.dataIngestionTb24h} TB`}
               icon={Database}
               trendPct={data.kpis.dataIngestionTrendPct}
               spark={data.kpis.ingestionSpark}
-              accent="#8B5CF6"
+              accent="#6B5CE7"
             />
             <KpiCard
+              index={1}
               label={`Events Ingested (${rl})`}
               value={formatNumber(data.kpis.eventsIngestion24h)}
               icon={Activity}
               trendPct={data.kpis.eventsTrendPct}
               spark={data.kpis.eventsSpark}
-              accent="#22D3EE"
+              accent="#2E8B6A"
             />
             <KpiCard
+              index={2}
               label="Prevented Events"
               value={formatNumber(data.kpis.preventedEvents)}
               icon={ShieldCheck}
-              accent="#10B981"
+              accent="#2E8B6A"
               sub="blocked pre-execution"
             />
             <KpiCard
+              index={3}
               label="Open Incidents"
               value={data.kpis.currentlyOpenIncidents}
               icon={AlertTriangle}
-              accent="#F97316"
+              accent="#FF7043"
               sub={`oldest open ${data.kpis.oldestOpenDays}d`}
             />
           </div>

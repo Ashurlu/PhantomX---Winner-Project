@@ -1,0 +1,160 @@
+/* Cinematic auth — SOC command gate */
+
+@keyframes auth-scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes auth-radar-sweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes auth-border-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes auth-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes auth-glitch {
+  0%, 90%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+  91% { clip-path: inset(20% 0 60% 0); transform: translate(-2px, 1px); }
+  92% { clip-path: inset(60% 0 10% 0); transform: translate(2px, -1px); }
+  93% { clip-path: inset(40% 0 40% 0); transform: translate(-1px, 2px); }
+}
+
+@keyframes auth-shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+@keyframes auth-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes auth-bar {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+
+.auth-scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    hsl(243 80% 70% / 0.03) 2px,
+    hsl(243 80% 70% / 0.03) 4px
+  );
+  z-index: 2;
+}
+
+.auth-scan-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    hsl(243 80% 70% / 0.06),
+    transparent
+  );
+  animation: auth-scanline 8s linear infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.auth-hud-bracket::before,
+.auth-hud-bracket::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: hsl(243 80% 70% / 0.55);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.auth-hud-bracket::before {
+  top: 12px;
+  left: 12px;
+  border-width: 2px 0 0 2px;
+}
+
+.auth-hud-bracket::after {
+  bottom: 12px;
+  right: 12px;
+  border-width: 0 2px 2px 0;
+}
+
+.auth-spin-border {
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.auth-spin-border::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 260deg,
+    hsl(243 80% 70%) 280deg,
+    hsl(186 100% 50%) 320deg,
+    transparent 340deg
+  );
+  animation: auth-border-spin 4s linear infinite;
+}
+
+.auth-glitch-text {
+  animation: auth-glitch 4s infinite;
+}
+
+.auth-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    hsl(220 16% 92%) 0%,
+    hsl(243 80% 70%) 25%,
+    hsl(186 100% 60%) 50%,
+    hsl(243 80% 70%) 75%,
+    hsl(220 16% 92%) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: auth-shimmer 6s linear infinite;
+}
+
+.auth-eq-bar {
+  transform-origin: bottom;
+  animation: auth-bar 1.2s ease-in-out infinite;
+}
+
+.auth-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: auth-marquee 28s linear infinite;
+}
+
+.auth-binary-col {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 1.1;
+  color: hsl(243 80% 70% / 0.12);
+  writing-mode: vertical-rl;
+  user-select: none;
+  animation: auth-float 6s ease-in-out infinite;
+}

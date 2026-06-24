@@ -46,6 +46,14 @@ import type {
   UserOut,
   UserProfile,
   ChatResponse,
+  CrammDetail,
+  CrammMatrix,
+  CrammAudit,
+  CrammExportReport,
+  WebPentestScanResult,
+  WebPentestSettings,
+  WebPentestSkill,
+  WebPentestMode,
 } from "./types";
 
 const BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
@@ -693,5 +701,165 @@ export function useSocChat() {
         method: "POST",
         body: JSON.stringify(body),
       }),
+  });
+}
+
+// ---------- CRAMM ----------
+export function useCrammMatrix() {
+  return useQuery({
+    queryKey: ["cramm", "matrix"],
+    queryFn: () => request<CrammMatrix>("/cramm/matrix"),
+  });
+}
+
+export function useCrammDetail(techniqueId: string | undefined) {
+  return useQuery({
+    queryKey: ["cramm", "risk", techniqueId],
+    queryFn: () => request<CrammDetail>(`/cramm/risks/${techniqueId}`),
+    enabled: Boolean(techniqueId),
+  });
+}
+
+export function useCrammAudit(enabled = true) {
+  return useQuery({
+    queryKey: ["cramm", "audit"],
+    queryFn: () => request<CrammAudit>("/cramm/audit"),
+    enabled,
+  });
+}
+
+export function useCrammExport(enabled = true) {
+  return useQuery({
+    queryKey: ["cramm", "export"],
+    queryFn: () => request<CrammExportReport>("/cramm/export"),
+    enabled,
+  });
+}
+
+// ---------- Web Pentest Agent (mounted at /api/web-pentest) ----------
+const WEB_PENTEST_API = `${BASE}/api/web-pentest`;
+
+function parseApiDetail(body: unknown, fallback: string): string {
+  if (!body || typeof body !== "object") return fallback;
+  const detail = (body as { detail?: unknown }).detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail) && detail.length > 0) {
+    const first = detail[0] as { msg?: string };
+    if (first?.msg) return first.msg;
+  }
+  return fallback;
+}
+
+async function webPentestRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = useAuth.getState().token;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${WEB_PENTEST_API}${path}`, { ...options, headers });
+  if (res.status === 401) {
+    useAuth.getState().logout();
+    throw new ApiError(401, "Session expired");
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, parseApiDetail(body, res.statusText));
+  }
+  return res.json() as Promise<T>;
+}
+
+export function useWebPentestSkills() {
+  return useQuery({
+    queryKey: ["web-pentest", "skills"],
+    queryFn: () => webPentestRequest<WebPentestSkill[]>("/skills"),
+  });
+}
+
+export function useWebPentestSettings() {
+  return useQuery({
+    queryKey: ["web-pentest", "settings"],
+    queryFn: () => webPentestRequest<WebPentestSettings>("/settings"),
+  });
+}
+
+export async function updateWebPentestSettings(body: {
+  provider: string;
+  model: string;
+  api_key: string;
+}) {
+  return webPentestRequest<WebPentestSettings>("/settings", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function runWebPentestScan(body: {
+  target_url: string;
+  authorized: boolean;
+  mode: WebPentestMode;
+  scanType: "static" | "ai_planner" | "ai_agent";
+  max_steps?: number;
+}) {
+  const { scanType, max_steps, ...payload } = body;
+  const path =
+    scanType === "ai_agent"
+      ? "/agent-start"
+      : scanType === "ai_planner"
+        ? "/ai-start"
+        : "/start";
+  const reqBody =
+    scanType === "ai_agent"
+      ? { ...payload, max_steps: max_steps ?? 5 }
+      : payload;
+
+  const controller = new AbortController();
+  const timeoutMs = scanType === "ai_agent" ? 120_000 : 60_000;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await webPentestRequest<WebPentestScanResult>(path, {
+      method: "POST",
+      body: JSON.stringify(reqBody),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "AbortError") {
+      throw new ApiError(504, "Scan timed out. Try passive mode or fewer agent steps.");
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function generateWebPentestReport(
+  scan: WebPentestScanResult & { scanType?: string }
+) {
+  const isAgent = Boolean(scan.agent_steps?.length);
+  if (isAgent) {
+    return webPentestRequest<{ success: boolean; markdown: string }>("/agent-report", {
+      method: "POST",
+      body: JSON.stringify({
+        target_url: scan.target,
+        mode: scan.mode,
+        agent_steps: scan.agent_steps,
+        findings: scan.findings,
+        validated_findings: scan.validated_findings ?? [],
+        final_ai_summary: scan.final_ai_summary ?? "",
+        provider_used: scan.provider_used ?? "unknown",
+        model_used: scan.model_used ?? "unknown",
+      }),
+    });
+  }
+  return webPentestRequest<{ success: boolean; markdown: string }>("/report", {
+    method: "POST",
+    body: JSON.stringify({
+      target_url: scan.target,
+      mode: scan.mode,
+      findings: scan.findings,
+      skills_used: scan.skills_used ?? [],
+    }),
   });
 }

@@ -1,0 +1,63 @@
+{
+  "title": "Identity Vector — Full Environment Audit",
+  "scope": "Active Directory service accounts, Kerberos encryption, and credential-access exposure",
+  "trendPct": 14,
+  "summary": "Identity vector risks increased 14% this week. Focus on SPN-bearing service accounts, RC4-enabled principals, and Kerberos roasting exposure.",
+  "items": [
+    {
+      "id": "AUD-01",
+      "category": "Service Accounts",
+      "title": "Audit all accounts with SPNs",
+      "description": "Inventory svc_* and legacy SQL/backup principals with registered SPNs.",
+      "status": "warning",
+      "techniqueId": "T1558.003",
+      "finding": "12 service accounts with SPNs; 3 still allow RC4."
+    },
+    {
+      "id": "AUD-02",
+      "category": "Kerberos",
+      "title": "Enforce AES encryption for Kerberos",
+      "description": "Disable RC4 and require AES-256 for service ticket encryption.",
+      "status": "fail",
+      "techniqueId": "T1558.003",
+      "finding": "svc_sql_prod vulnerable to offline TGS cracking."
+    },
+    {
+      "id": "AUD-03",
+      "category": "Credential Access",
+      "title": "Review AS-REP roastable accounts",
+      "description": "Accounts without pre-authentication enabled.",
+      "status": "warning",
+      "techniqueId": "T1558.004",
+      "finding": "2 stale accounts flagged in last pentest run."
+    },
+    {
+      "id": "AUD-04",
+      "category": "Domain Security",
+      "title": "Validate DCSync replication rights",
+      "description": "Non-DC hosts with replication privileges.",
+      "status": "fail",
+      "techniqueId": "T1003.006",
+      "finding": "Linked to open case PX-D034471 / alert A-1455."
+    },
+    {
+      "id": "AUD-05",
+      "category": "Tier-0",
+      "title": "krbtgt rotation schedule",
+      "description": "Golden ticket recovery requires double krbtgt reset.",
+      "status": "pass",
+      "techniqueId": "T1558.001",
+      "finding": "Last rotation documented 90 days ago."
+    },
+    {
+      "id": "AUD-06",
+      "category": "Detection",
+      "title": "TGS-REQ anomaly monitoring",
+      "description": "SIEM rules for unusual TGS volume per user toward rare SPNs.",
+      "status": "warning",
+      "techniqueId": "T1558.003",
+      "finding": "Sigma rule R-21 approved; coverage gap on HR-DC01 segment."
+    }
+  ],
+  "linkedRisks": ["T1558.003", "T1558.004", "T1003.006", "T1558.001"]
+}

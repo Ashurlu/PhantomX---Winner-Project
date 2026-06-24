@@ -34,6 +34,63 @@ async def _jitter():
     await asyncio.sleep(random.uniform(0.1, 0.4))
 
 
+def _generic_cramm_detail(item: dict) -> dict:
+    score = int(item["riskScore"] * 10)
+    ale = int(item["riskScore"] * 12000)
+    return {
+        "id": item["id"],
+        "techniqueId": item["techniqueId"],
+        "title": item["title"],
+        "subtitle": item["title"],
+        "description": item["description"],
+        "severity": item["severity"],
+        "severityLabel": item["severity"].upper(),
+        "mitreId": item["techniqueId"],
+        "crammLevel": item["crammLevel"],
+        "riskScore": score,
+        "riskScoreLabel": "ELEVATED" if score > 80 else "MODERATE+",
+        "annualLoss": ale,
+        "annualLossLabel": f"${ale // 1000}k / YEAR",
+        "resolutionWindow": "08:00:00",
+        "systemId": f"{item['techniqueId'].replace('.', '')}-CRAMM",
+        "asset": {
+            "name": "enterprise-ad",
+            "assetValue": item["crammLevel"] + 3,
+            "principalName": "CORP\\service-account",
+            "domainPath": "CORP.LOCAL",
+            "privilegeLevel": "Domain User",
+            "note": "Synthetic asset context for demo matrix entry.",
+        },
+        "assessment": {
+            "model": "CRAMM 5.1",
+            "standard": "ISO 27005",
+            "assetValue": item["crammLevel"] + 3,
+            "assetValueNote": "Service Significance",
+            "threatDegree": min(10, item["crammLevel"] + 4),
+            "threatDegreeNote": "Prevalence Index",
+            "exposureFactor": 2,
+            "exposureFactorNote": "Detection Gap",
+            "criticalityPct": min(95, int(item["riskScore"] * 10)),
+            "vectors": [
+                {"label": "Threat Prevalence", "pct": min(95, int(item["riskScore"] * 10)), "tone": "rose"},
+                {"label": "Detection Coverage", "pct": 55, "tone": "cyan"},
+                {"label": "Blast Radius", "pct": 48, "tone": "amber"},
+            ],
+            "enterpriseAle": ale,
+        },
+        "controls": [
+            {
+                "id": "C-01",
+                "title": f"Mitigate {item['title']}",
+                "description": "Apply MITRE mitigation controls and validate detection rules in SIEM.",
+                "priority": "high",
+            }
+        ],
+        "linkedCaseId": None,
+        "linkedAlertId": None,
+    }
+
+
 class MockProvider:
     def __init__(self) -> None:
         # Mutable copies so the demo can change state in-process.
@@ -460,6 +517,34 @@ class MockProvider:
     async def coverage(self) -> list[dict]:
         await _jitter()
         return _load("attack_coverage.json")
+
+    # ---- CRAMM ----
+    async def cramm_matrix(self) -> dict:
+        await _jitter()
+        return _load("cramm.json")
+
+    async def cramm_detail(self, technique_id: str) -> dict | None:
+        await _jitter()
+        details = _load("cramm_details.json")
+        if technique_id in details:
+            return details[technique_id]
+        matrix = _load("cramm.json")
+        for item in matrix["critical"] + matrix["high"]:
+            if item["id"] == technique_id:
+                return _generic_cramm_detail(item)
+        return None
+
+    async def cramm_audit(self) -> dict:
+        await _jitter()
+        return _load("cramm_audit.json")
+
+    async def cramm_export(self) -> dict:
+        await _jitter()
+        return {
+            "generatedAt": datetime.now(timezone.utc).isoformat(),
+            "matrix": _load("cramm.json"),
+            "audit": _load("cramm_audit.json"),
+        }
 
     # ---- Maintenance ----
     async def reset_demo(self) -> None:

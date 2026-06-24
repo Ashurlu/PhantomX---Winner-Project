@@ -106,6 +106,18 @@ class LiveProvider:
     async def coverage(self) -> list[dict]:
         return await mock_provider.coverage()
 
+    async def cramm_matrix(self) -> dict:
+        return await mock_provider.cramm_matrix()
+
+    async def cramm_detail(self, technique_id: str) -> dict | None:
+        return await mock_provider.cramm_detail(technique_id)
+
+    async def cramm_audit(self) -> dict:
+        return await mock_provider.cramm_audit()
+
+    async def cramm_export(self) -> dict:
+        return await mock_provider.cramm_export()
+
     async def reset_demo(self) -> None:
         self._runs.clear()
         self._tasks.clear()

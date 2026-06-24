@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Bot, Gavel, Scale, ShieldAlert } from "lucide-react";
+import { Bot, Gavel, ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SeverityBadge } from "@/components/SeverityBadge";
+import { ModuleHero, ModuleCoreBadge } from "@/components/module";
 import { Tribunal } from "@/three/Tribunal";
 import { ErrorState, LoadingState } from "@/components/States";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,35 +33,29 @@ export function AiCourtPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          icon={Gavel}
-          label="True Positives Shown"
-          value={stats.data ? String(stats.data.truePositivesShown) : "—"}
-          accent="#8B5CF6"
-          loading={stats.isLoading}
-        />
-        <StatCard
-          icon={Bot}
-          label="False Positives Auto-Closed"
-          value={stats.data ? formatNumber(stats.data.falsePositivesAutoClosed) : "—"}
-          accent="#22D3EE"
-          loading={stats.isLoading}
-          sub="never listed — only counted"
-        />
-        <StatCard
-          icon={Scale}
-          label="Period"
-          value={periodLabel}
-          accent="#F59E0B"
-          loading={stats.isLoading}
-        />
-      </div>
+      <ModuleHero
+        accent="violet"
+        section="AI Court"
+        title="Autonomous Adjudication Tribunal"
+        description="Prosecutor, defender, and judge agents debate evidence over true-positive alerts — rendering verdicts without flooding your inbox with noise."
+        badge={<ModuleCoreBadge>AI Core</ModuleCoreBadge>}
+        stats={[
+          {
+            label: "True positives",
+            value: stats.data ? String(stats.data.truePositivesShown) : "—",
+            accent: "#8B5CF6",
+          },
+          {
+            label: "FP auto-closed",
+            value: stats.data ? formatNumber(stats.data.falsePositivesAutoClosed) : "—",
+            accent: "#22D3EE",
+          },
+          { label: "Period", value: periodLabel, accent: "#F59E0B" },
+        ]}
+      />
 
       <div className="grid gap-6 lg:grid-cols-5">
-        {/* 3D Tribunal */}
-        <Card className="relative col-span-3 h-[440px] overflow-hidden p-0">
+        <Card className="module-panel accent-top relative col-span-3 h-[440px] overflow-hidden border-0 p-0 shadow-none">
           <div className="absolute inset-0">
             <Tribunal />
           </div>
@@ -82,7 +77,7 @@ export function AiCourtPage() {
         </Card>
 
         {/* Case feed */}
-        <Card className="col-span-2 flex h-[440px] flex-col p-0">
+        <Card className="module-panel accent-top col-span-2 flex h-[440px] flex-col border-0 p-0 shadow-none">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <ShieldAlert className="h-4 w-4 text-primary" />
@@ -159,48 +154,6 @@ function CaseRow({
         <CaseAssigneeBadge assignee={assignee} showLabel />
       </div>
     </motion.button>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  accent,
-  sub,
-  loading,
-}: {
-  icon: typeof Bot;
-  label: string;
-  value: string;
-  accent: string;
-  sub?: string;
-  loading?: boolean;
-}) {
-  return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">
-            {label}
-          </span>
-          {loading ? (
-            <Skeleton className="h-9 w-20" />
-          ) : (
-            <span className="font-display text-3xl font-bold" style={{ color: accent }}>
-              {value}
-            </span>
-          )}
-          {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
-        </div>
-        <div
-          className="flex h-10 w-10 items-center justify-center rounded-lg"
-          style={{ background: `color-mix(in srgb, ${accent} 16%, transparent)` }}
-        >
-          <Icon className="h-5 w-5" style={{ color: accent }} />
-        </div>
-      </div>
-    </Card>
   );
 }
 

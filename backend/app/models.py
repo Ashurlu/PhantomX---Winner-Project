@@ -562,3 +562,119 @@ class ChatResponse(BaseModel):
     reply: str
     source: Literal["local", "openrouter", "openai", "anthropic"]
     citations: list[ChatCitation] = []
+
+
+# ---------- CRAMM (Risk Matrix) ----------
+class CrammStats(BaseModel):
+    totalRisks: int
+    criticalCount: int
+    highSeverityCount: int
+    avgHealthScore: int
+
+
+class CrammInsight(BaseModel):
+    message: str
+    ctaLabel: str
+    trendPct: int
+
+
+class CrammRiskSummary(BaseModel):
+    id: str
+    techniqueId: str
+    title: str
+    description: str
+    riskScore: float
+    severity: Literal["critical", "high", "medium"]
+    tags: list[str]
+    crammLevel: int
+
+
+class CrammMatrix(BaseModel):
+    stats: CrammStats
+    insight: CrammInsight
+    critical: list[CrammRiskSummary]
+    high: list[CrammRiskSummary]
+
+
+class CrammAssetContext(BaseModel):
+    name: str
+    assetValue: int
+    principalName: str
+    domainPath: str
+    privilegeLevel: str
+    note: str
+
+
+class CrammVector(BaseModel):
+    label: str
+    pct: int
+    tone: Literal["cyan", "rose", "amber", "violet"] = "cyan"
+
+
+class CrammAssessment(BaseModel):
+    model: str
+    standard: str
+    assetValue: int
+    assetValueNote: str
+    threatDegree: int
+    threatDegreeNote: str
+    exposureFactor: int
+    exposureFactorNote: str
+    criticalityPct: int
+    vectors: list[CrammVector]
+    enterpriseAle: int
+
+
+class CrammControl(BaseModel):
+    id: str
+    title: str
+    description: str
+    priority: Literal["high", "medium", "low"]
+
+
+class CrammDetail(BaseModel):
+    id: str
+    techniqueId: str
+    title: str
+    subtitle: str
+    description: str
+    severity: str
+    severityLabel: str
+    mitreId: str
+    crammLevel: int
+    riskScore: int
+    riskScoreLabel: str
+    annualLoss: int
+    annualLossLabel: str
+    resolutionWindow: str
+    systemId: str
+    asset: CrammAssetContext
+    assessment: CrammAssessment
+    controls: list[CrammControl]
+    linkedCaseId: Optional[str] = None
+    linkedAlertId: Optional[str] = None
+
+
+class CrammAuditItem(BaseModel):
+    id: str
+    category: str
+    title: str
+    description: str
+    status: Literal["pass", "warning", "fail"]
+    techniqueId: str
+    finding: str
+
+
+class CrammAudit(BaseModel):
+    title: str
+    scope: str
+    trendPct: int
+    summary: str
+    items: list[CrammAuditItem]
+    linkedRisks: list[str]
+
+
+class CrammExportReport(BaseModel):
+    generatedAt: str
+    matrix: CrammMatrix
+    audit: CrammAudit
