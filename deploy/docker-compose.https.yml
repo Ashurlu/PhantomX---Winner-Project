@@ -1,9 +1,19 @@
-# Merge for HTTPS: disables frontend host port (Caddy owns 80/443).
-#   docker compose -f docker-compose.prod.yml -f deploy/docker-compose.https.yml --env-file .env.prod up -d --build
+# Merge for HTTPS:
+#   docker compose -f docker-compose.prod.yml -f deploy/docker-compose.https.yml \
+#     --env-file .env.prod --profile https up -d
+#
+# Caddy owns 80/443, so keep the frontend off those ports by setting
+#   HTTP_PORT=127.0.0.1:8080
+# in .env.prod. This override cannot do it: Compose merges `ports` lists by
+# appending, so `ports: []` here does not clear the base binding and Caddy
+# fails with "port is already allocated". For the same reason `profiles: []`
+# does not lift the base `profiles: ["https"]` — pass --profile https instead.
 
 services:
-  frontend:
-    ports: []
-
   caddy:
-    profiles: []
+    # The host resolv.conf points at the systemd-resolved stub (127.0.0.53),
+    # which containers cannot route to, so Caddy cannot reach the ACME
+    # directory and every certificate order fails with "connection refused".
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8

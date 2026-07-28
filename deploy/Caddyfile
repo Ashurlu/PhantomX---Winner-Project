@@ -1,8 +1,15 @@
-# Used with: docker compose -f docker-compose.prod.yml --profile https up -d
+# Used with: docker compose -f docker-compose.prod.yml \
+#              -f deploy/docker-compose.https.yml \
+#              --env-file .env.prod --profile https up -d
 # Requires DOMAIN and ACME_EMAIL in .env.prod, and DNS A record → droplet IP.
 
-{$DOMAIN} {
+# `email` is a global option in Caddy v2. Inside a site block it fails to parse
+# with "unrecognized directive: email" and Caddy crash-loops.
+{
 	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
 	encode gzip
 
 	handle /api/* {

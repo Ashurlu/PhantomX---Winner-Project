@@ -107,24 +107,37 @@ Change the admin password after going live (Admin → Users).
 
 ---
 
-## HTTPS with your own domain (recommended)
+## HTTPS (recommended)
 
-1. Add a DNS **A record**: `sentrix.yourdomain.com` → droplet IP (wait a few minutes).
-2. Update `.env.prod`:
+1. Pick a hostname that resolves to the droplet IP. Either add a DNS **A
+   record** for a domain you own, or use sslip.io, which needs no DNS account:
+   `YOUR_SERVER_IP` → `64-226-121-100.sslip.io`.
+2. Update `.env.prod`. `HTTP_PORT` matters: Caddy needs 80 for the ACME HTTP
+   challenge, so the frontend has to move off it.
 
 ```env
-DOMAIN=sentrix.yourdomain.com
+DOMAIN=64-226-121-100.sslip.io
 ACME_EMAIL=you@example.com
-PUBLIC_URL=https://sentrix.yourdomain.com
+PUBLIC_URL=https://64-226-121-100.sslip.io
+HTTP_PORT=127.0.0.1:8080
 ```
 
-3. Stop exposing port 80 on the frontend only; use Caddy:
+3. Bring the stack up with the `https` profile:
 
 ```bash
-docker compose -f docker-compose.prod.yml -f deploy/docker-compose.https.yml --env-file .env.prod up -d --build
+docker compose -f docker-compose.prod.yml -f deploy/docker-compose.https.yml \
+  --env-file .env.prod --profile https up -d
 ```
 
-When using HTTPS, Caddy listens on 80/443 and proxies to the app. Visit **https://sentrix.yourdomain.com**.
+Caddy then listens on 80/443, redirects HTTP to HTTPS, and proxies `/api/*` to
+the backend and everything else to the frontend. The certificate renews itself.
+
+Verify before assuming it worked — Caddy stays up even when certificate orders
+are failing:
+
+```bash
+curl -fsS https://$DOMAIN/api/v1/health && docker logs sentrix-caddy | tail -20
+```
 
 ---
 
