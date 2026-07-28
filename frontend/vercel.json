@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://overhang-aqua-ergonomic.ngrok-free.dev/api/:path*"
+      "destination": "http://YOUR_SERVER_IP/api/:path*"
     },
     {
       "source": "/((?!api/).*)",
