@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from . import db
 from .config import settings
 from .routers import admin, ai_court, attack, auth, cases, chat, cramm, detection, hunt, overview, pentest, profile, rules
+from .security_middleware import RateLimitMiddleware, SecurityHeadersMiddleware
 from .web_pentest_mount import include_web_pentest
 
 app = FastAPI(title=f"{settings.APP_NAME} BFF", version="1.0.0")
@@ -16,6 +17,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 db.AVATAR_DIR.mkdir(parents=True, exist_ok=True)

@@ -75,8 +75,8 @@ async def update_my_profile(body: ProfileUpdate, user: dict = Depends(current_us
 async def change_my_password(
     body: ProfilePasswordChange, user: dict = Depends(current_user)
 ):
-    if len(body.newPassword) < 6:
-        raise HTTPException(status_code=422, detail="New password must be at least 6 characters.")
+    if len(body.newPassword) < 8:
+        raise HTTPException(status_code=422, detail="New password must be at least 8 characters.")
     try:
         ok = db.change_password(user["username"], body.currentPassword, body.newPassword)
     except ValueError as e:

@@ -31,8 +31,8 @@ async def signup(body: SignupRequest):
     username = body.username.strip()
     if len(username) < 3:
         raise HTTPException(status_code=422, detail="Username must be at least 3 characters")
-    if len(body.password) < 6:
-        raise HTTPException(status_code=422, detail="Password must be at least 6 characters")
+    if len(body.password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
 
     # New accounts are analysts; an admin promotes them later (defense in depth).
     try:

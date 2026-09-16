@@ -117,8 +117,8 @@ async def create_user(body: CreateUserRequest, admin: dict = Depends(admin_only)
     username = body.username.strip()
     if len(username) < 3:
         raise HTTPException(status_code=422, detail="Username must be at least 3 characters")
-    if len(body.password) < 6:
-        raise HTTPException(status_code=422, detail="Password must be at least 6 characters")
+    if len(body.password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
     try:
         created = db.create_user(username, body.password, role=body.role)
     except ValueError as exc:
@@ -164,8 +164,8 @@ async def set_active(username: str, body: ActiveUpdate, admin: dict = Depends(ad
 async def set_password(
     username: str, body: PasswordUpdate, admin: dict = Depends(admin_only)
 ):
-    if len(body.password) < 6:
-        raise HTTPException(status_code=422, detail="Password must be at least 6 characters")
+    if len(body.password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters")
     if db.get_user(username) is None:
         raise HTTPException(status_code=404, detail="User not found")
     db.add_audit(admin["username"], "user.password", f"reset for {username}")

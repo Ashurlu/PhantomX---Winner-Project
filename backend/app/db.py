@@ -196,8 +196,8 @@ def create_user(username: str, password: str, role: str = "analyst") -> dict | N
         raise ValueError(
             "Username must be at least 3 characters (letters, numbers, - or _)."
         )
-    if len(password) < 6:
-        raise ValueError("Password must be at least 6 characters.")
+    if len(password) < 8:
+        raise ValueError("Password must be at least 8 characters.")
     conn = _conn()
     try:
         exists = conn.execute(
@@ -437,8 +437,8 @@ def change_password(username: str, current_password: str, new_password: str) -> 
     role = authenticate(username, current_password)
     if role is None:
         return False
-    if len(new_password) < 6:
-        raise ValueError("New password must be at least 6 characters.")
+    if len(new_password) < 8:
+        raise ValueError("New password must be at least 8 characters.")
     return set_password(username, new_password) is not None
 
 
