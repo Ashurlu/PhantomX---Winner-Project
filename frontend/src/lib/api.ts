@@ -81,6 +81,7 @@ async function request<T>(
   const token = useAuth.getState().token;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
     ...(options.headers as Record<string, string>),
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -140,7 +141,10 @@ export function useUploadAvatar() {
       form.append("file", file, file.name);
       const res = await fetch(`${API}/profile/avatar`, {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: form,
       });
       if (res.status === 401) {
@@ -562,7 +566,10 @@ export function useEngineHealth() {
 export async function openRunReport(runId: string) {
   const token = useAuth.getState().token;
   const res = await fetch(`${API}/pentest/runs/${runId}/report`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: {
+      "ngrok-skip-browser-warning": "true",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
   });
   if (!res.ok) throw new ApiError(res.status, "Report not available yet");
   const html = await res.text();
@@ -764,7 +771,10 @@ export function useResetDemo() {
 export async function downloadConfig() {
   const token = useAuth.getState().token;
   const res = await fetch(`${API}/admin/export-config`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: {
+      "ngrok-skip-browser-warning": "true",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
   });
   if (!res.ok) throw new ApiError(res.status, "Failed to export config");
   const blob = await res.blob();
@@ -790,7 +800,10 @@ export function useCoverage() {
 export async function downloadNavigatorLayer() {
   const token = useAuth.getState().token;
   const res = await fetch(`${API}/attack/navigator-layer`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: {
+      "ngrok-skip-browser-warning": "true",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
   });
   if (!res.ok) throw new ApiError(res.status, "Failed to export layer");
   const blob = await res.blob();
@@ -896,6 +909,7 @@ async function webPentestRequest<T>(path: string, options: RequestInit = {}): Pr
   const token = useAuth.getState().token;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
     ...(options.headers as Record<string, string>),
   };
   if (token) headers.Authorization = `Bearer ${token}`;
