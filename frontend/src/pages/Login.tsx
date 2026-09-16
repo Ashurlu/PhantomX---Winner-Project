@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
+  ArrowLeft,
   ArrowRight,
   Bot,
   Fingerprint,
@@ -83,6 +84,13 @@ export function Login() {
           className="flex flex-col gap-8"
         >
           <div className="flex flex-col gap-6">
+            <Link
+              to="/"
+              className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/55 backdrop-blur-sm transition-colors hover:border-cyan-400/40 hover:text-cyan-300"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back to home
+            </Link>
             <PhantomXLogo markSize={36} className="text-3xl text-white md:text-4xl" />
             <p className="auth-glitch-text mb-2 font-mono text-[10px] uppercase tracking-[0.35em] text-cyan-400/80">
               ◈ Classified // Operator Gate
