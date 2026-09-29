@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://overhang-aqua-ergonomic.ngrok-free.dev/api/:path*"
+      "destination": "https://phantomx-api-ashurlu.azurewebsites.net/api/:path*"
     },
     {
       "source": "/((?!api/).*)",

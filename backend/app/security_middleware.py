@@ -29,7 +29,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         limit = _LIMITS.get(request.url.path)
         if limit is not None and request.method == "POST":
-            client_ip = request.client.host if request.client else "unknown"
+            # Behind Vercel/App Service every request arrives from a proxy IP, so key on
+            # the originating client or one attacker could lock out all logins.
+            forwarded = request.headers.get("x-forwarded-for", "")
+            client_ip = forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
             key = (client_ip, request.url.path)
             now = time.monotonic()
             bucket = _hits[key]
