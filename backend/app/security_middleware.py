@@ -23,17 +23,27 @@ _LIMITS = {
 _hits: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 
 
+def _client_ip(request: Request) -> str:
+    # Behind Vercel/App Service every request arrives from a proxy IP, so key on the
+    # originating client. App Service appends ":port" to it, which must be stripped or
+    # every new connection would get a fresh bucket.
+    ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    if not ip:
+        return request.client.host if request.client else "unknown"
+    if ip.startswith("["):
+        return ip[1 : ip.find("]")]
+    if ip.count(":") == 1:
+        return ip.split(":")[0]
+    return ip
+
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Per-IP sliding-window limit on login/signup to slow brute-force attempts."""
 
     async def dispatch(self, request: Request, call_next):
         limit = _LIMITS.get(request.url.path)
         if limit is not None and request.method == "POST":
-            # Behind Vercel/App Service every request arrives from a proxy IP, so key on
-            # the originating client or one attacker could lock out all logins.
-            forwarded = request.headers.get("x-forwarded-for", "")
-            client_ip = forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
-            key = (client_ip, request.url.path)
+            key = (_client_ip(request), request.url.path)
             now = time.monotonic()
             bucket = _hits[key]
             while bucket and now - bucket[0] > _WINDOW_SECONDS:
